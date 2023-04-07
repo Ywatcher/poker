@@ -1,39 +1,10 @@
+# -*- coding: utf-8 -*-
 from abc import ABC
 
 from agent.abstract_agent import Agent
 from ontology.elements import Hand, Action, FoldAction
 from rule import Rule
 from observation import GameObs, FullGameObs
-
-
-# class GameStateFactory:
-#     def __init__(self, gameStateManager: "GameStateManager", rule, idx):
-#         self.manager = GameStateManager
-#         self.rule = rule
-#         self.id = idx
-#
-#     def newGameState(self, *args):
-#         # rule : rds are equally divided during deal
-#         gameState = self.rule.get_init_state(*args)
-#         self.manager.add_state(gameState=gameState)
-#
-#
-# class GameStateManager:
-#     def __init__(self):
-#         self._card_states: list[Hand] = []
-#         self._factorys = []
-#
-#     def newCardFactory(self, rule):
-#         idx = len(self._factorys)
-#         factory = GameStateFactory(self, rule, idx)
-#         self._factorys.append(factory)
-#         return factory
-#
-#     def add_state(self, gameState: Hand):
-#         idx = len(self._card_states)
-#         self._card_states.append(gameState)
-#         gameState.id = idx
-#
 
 
 class GameRecordsBuffer:
@@ -44,21 +15,6 @@ class GameRecordsBuffer:
     def add_record(self, record: Action):
         self.rounds += 1
         self.buffer.append(record)
-
-
-# class Player(ABC):
-#     def __init__(self, agent:Agent, tag):
-#         self.tag = tag
-#         self.hand_inited = False
-#         self.hand = None
-#         self.state = "on_going"
-#         self.agent = agent
-#
-#     def action(self, obs:GameObs) -> Action:
-#         return self.agent.
-
-# def hands(self):
-#     return
 
 
 class Game(ABC):

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from agent.abstract_agent import Agent
 from user_interface import AbstractGUI
 

@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 force_cpu = "cpu"
 auto = "auto"
 

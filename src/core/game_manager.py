@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from core.game import Game
 from agent.abstract_agent import Agent
 from agent.human_agent import HumanAgent

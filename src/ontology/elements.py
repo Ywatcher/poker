@@ -1,15 +1,8 @@
+# -*- coding: utf-8 -*-
+
 import torch
 from torch.nn import functional as F
 from ontology.cards import CardSuit, CardFace
-
-
-# class Location:
-#     pass
-#
-#
-# class Pile(Location):
-#     def __init__(self):
-#         pass
 
 
 class Card:
@@ -67,9 +60,6 @@ class FoldAction(Action):
     # when starting game
     def __init__(self,player):
         super(FoldAction, self).__init__(player=player, cards=None)
-
-
-# class
 
 
 if __name__ == "__main__":

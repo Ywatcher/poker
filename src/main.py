@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from core.game import FullObsGame
 from core.game_manager import GameManager
 from core.rule import NaiveFxxkLandLord

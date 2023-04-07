@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from core.observation import GameObs
 from ontology.elements import Action
 
