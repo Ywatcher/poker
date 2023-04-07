@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import threading
+
 from core.game import FullObsGame
 from core.game_manager import GameManager
 from core.rule import NaiveFxxkLandLord
@@ -16,3 +18,12 @@ def main():
     game_manager.setGUI(gui, "lord")
     for name in ["lord", "farmer_1", "farmer_2"]:
         game_manager.setAgent(NaiveAgent(), name)
+    thread = threading.Thread(target=game.run)
+    thread.start()
+    print(game.info)
+    gui.mainloop()
+    # game.run()
+
+
+if __name__ == "__main__":
+    main()

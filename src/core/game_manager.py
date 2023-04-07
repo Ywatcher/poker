@@ -16,13 +16,13 @@ class GameManager:
 
     def setGUI(self, GUI: AbstractGUI, player_name):
         self.guis.update({player_name: GUI})
-        GUI.get_observation = lambda s: self.game.get_observation(player_name)
-        GUI.get_history = lambda s: self.game.log
-        GUI.get_game_info = lambda s: self.game.info
+        # print("setting")
+        GUI.set_func_get_observation(f=lambda: self.game.get_observation(player_name))
+        GUI.set_func_get_history(f=lambda: self.game.log)
+        GUI.set_func_get_game_info(f=lambda: self.game.info)
 
-    def setAgent(self, agent:Agent, player_name):
-        self.game.set_agent(agent=agent,player_name=player_name)
+    def setAgent(self, agent: Agent, player_name):
+        self.game.set_agent(agent=agent, player_name=player_name)
         if agent.is_human:
             assert isinstance(agent, HumanAgent)
             agent.set_gui(self.guis[player_name])
-

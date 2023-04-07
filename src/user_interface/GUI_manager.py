@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from AbstractGUI import AbstractGUI
+from user_interface.AbstractGUI import AbstractGUI
 
-from QtGUI import QtGUI
+from user_interface.QtGUI import QtGUI
 
 # from utils import global_config
 
@@ -11,7 +11,7 @@ class UI_types:
     NaiveTkinter = "NaiveTkinterGUI"
     PyQt = "PyQt"
     CML = "CML_GUI"
-    ALL_TYPES = [NaiveTkinter, NONE, CML]
+    ALL_TYPES = [NaiveTkinter, NONE, CML, PyQt]
 
 
 class GUIFactory:

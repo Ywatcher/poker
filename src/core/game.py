@@ -3,8 +3,8 @@ from abc import ABC
 
 from agent.abstract_agent import Agent
 from ontology.elements import Hand, Action, FoldAction
-from rule import Rule
-from observation import GameObs, FullGameObs
+from core.rule import Rule
+from core.observation import GameObs, FullGameObs
 
 
 class GameRecordsBuffer:
@@ -17,9 +17,24 @@ class GameRecordsBuffer:
         self.buffer.append(record)
 
 
+class GameInfo:
+    def __init__(self, is_started, is_ended, current_player_name=None):
+        self.is_started = is_started
+        self.is_ended = is_ended
+        self.current_player_name = current_player_name
+        self.iter = 0
+
+    def __repr__(self):
+        return "is started: {}, is ended: {} current player: {}".format(
+            self.is_started, self.is_ended, self.current_player_name
+        )
+
+
 class Game(ABC):
+
     def __init__(self, rule):
         self.rule = rule
+        self.player_encoder = rule.get_encoder()
         self.hands: dict[str, Hand] = {
             p: None for p in rule.player_list()
         }
@@ -28,9 +43,9 @@ class Game(ABC):
         # discarded cards
         self.player_states = rule.init_state()
         self.player_hands: dict[str, Hand] = {}
-        self.is_end = False
+        # self.is_end = False
         self.player_observations = {}
-        self.info = None
+        self.info = GameInfo(is_started=False, is_ended=False)
         self.player_agents: dict[str, Agent] = {}
         # self.table_cards = set()
 
@@ -43,16 +58,25 @@ class Game(ABC):
             for p in self.rule.player_list()
         }
         # no bet
-        current_player_name = self.rule.first_player()
-        self.update_observations(action=FoldAction("start"))
-        while not self.is_end:
-            obs = self.get_observation(player_name=current_player_name)
+        self.info.current_player_name = self.rule.first_player()
+        last_action = FoldAction("start")
+        self.update_observations(action=last_action)
+        self.info.is_started = True
+        while not self.info.is_ended:
+            obs = self.get_observation(player_name=self.info.current_player_name)
             # play
-            action = self.player_agents[current_player_name].action(obs)
-            self.update_observations(action)
-            self.player_states, current_player_name, self.is_end = self.rule.judge(
-                self.player_states, current_player_name, self.player_hands
+            # print(self.info)
+            legal_actions = self.rule.legal_actions(
+                last_action=last_action,
+                player_name=self.info.current_player_name,
+                own_hand=self.player_hands[self.info.current_player_name]
             )
+            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions)
+            self.update_observations(action)
+            self.player_states, self.info.current_player_name, self.info.is_ended = self.rule.judge(
+                self.player_states, self.info.current_player_name, self.player_hands
+            )
+            self.info.iter = self.info.iter+1
 
     @classmethod
     def update_observations(cls, action: Action):
@@ -70,8 +94,13 @@ class FullObsGame(Game):
         self.player_observations = {
             player_name: FullGameObs(
                 hands={p: self.hands[p] for p in self.player_hands.keys() if p != player_name},
-                your_own_hand=self.player_hands[player_name],
+                your_own_hand={player_name: self.player_hands[player_name]},
                 last_action=action,
-                nr_players=len(self.player_states)
+                nr_players=len(self.player_states),
+                encoder=self.player_encoder
             ) for player_name in self.player_states.keys()
         }
+
+
+class PartialObsGame(Game):
+    pass

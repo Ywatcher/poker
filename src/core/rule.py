@@ -4,10 +4,18 @@ import random
 
 import torch
 
-from ontology.elements import CardSuit, CardFace, Card
+from ontology.elements import CardSuit, CardFace, Card, Action, Hand
 
 
 class Rule(ABC):
+    class PlayerEncoder(ABC):
+        def encode(self, player_name: str) -> torch.Tensor:
+            pass
+
+    @classmethod
+    def get_encoder(cls) -> "Rule.PlayerEncoder":
+        return cls.PlayerEncoder()
+
     @classmethod
     def all_cards(cls) -> set[Card]:
         pass
@@ -40,6 +48,7 @@ class Rule(ABC):
     def judge(cls, player_state, current_player, hands) -> tuple:
         """
         judge after each player plays
+        :param hands:
         :param player_state:
         :param current_player:
         :return:  next state, next player;is end
@@ -47,17 +56,28 @@ class Rule(ABC):
         pass
 
     @classmethod
-    def player_encode(cls):
-        # "start" always encode to zero
+    def legal_actions(cls, last_action: Action, own_hand: Hand, player_name: str) -> list[Action]:
         pass
 
 
 class NaiveFxxkLandLord(Rule):
+    class PlayerEncoder(Rule.PlayerEncoder):
+        def __init__(self):
+            self.dict = {
+                "start": torch.Tensor([0., 0., 0.]),
+                "lord": torch.Tensor([1., 0., 0.]),
+                "farmer_1": torch.Tensor([0., 1., 0.]),
+                "farmer_2": torch.Tensor([0., 0., 1.])
+            }
+
+        def encode(self, player_name: str) -> torch.Tensor:
+            return self.dict[player_name]
+
     def __init__(self, seed: int = 0):
         self.seed = seed
         # without joker
         self.cards = [
-            Card(suit=CardSuit(i), face=CardFace(j))
+            Card(suit=CardSuit(j), face=CardFace(i))
             for i in range(13) for j in range(4)
         ]
         self.nr_cards = 52
@@ -88,23 +108,29 @@ class NaiveFxxkLandLord(Rule):
         nr_card_for_each_player = [18, 17, 17]
         deal = {
             "lord": shuffle_index[0:18],
-            "farmer1": shuffle_index[18:18 + 17],
-            "farmer2": shuffle_index[18 + 17:18 + 17 + 17]
+            "farmer_1": shuffle_index[18:18 + 17],
+            "farmer_2": shuffle_index[18 + 17:18 + 17 + 17]
         }
 
         return deal
 
     def judge(self, player_state: dict, current_player, hands) -> tuple:
-        assert player_state[current_player] == "ongoing"
+        # print(player_state)
+        assert player_state[current_player] == "on_going"
         if "pass_1" in player_state.values():
+            # print("1pass")
             two_passed = True
         else:
+            # print("2pass")
             two_passed = False
         if "pass_0" in player_state.values():
+            # print("1pass")
             one_passed = True
         else:
             one_passed = False
+        # print(1)
         if len(hands[current_player]) == 0:
+            # print("he")
             if two_passed:
                 player_state[current_player] = "pass_2"
             elif one_passed:
@@ -112,27 +138,35 @@ class NaiveFxxkLandLord(Rule):
                 two_passed = True
             else:
                 player_state[current_player] = "pass_0"
-
-        if two_passed or player_state["lord"] != "ongoing":
+        if two_passed or player_state["lord"] != "on_going":
             is_end = True
         else:
             is_end = False
         if is_end:
             return player_state, current_player, is_end
         if current_player == "lord":
-            if player_state["farmer1"] == "ongoing":
-                next_player = "farmer1"
+            if player_state["farmer_1"] == "on_going":
+                next_player = "farmer_1"
             else:
-                next_player = "farmer2"
-        elif current_player == "farmer1":
-            if player_state["farmer2"] == "ongoing":
-                next_player = "farmer2"
+                next_player = "farmer_2"
+        elif current_player == "farmer_1":
+            if player_state["farmer_2"] == "on_going":
+                next_player = "farmer_2"
             else:
                 next_player = "lord"
         else:
-            assert player_state["lord"] == "ongoing"
+            assert player_state["lord"] == "on_going"
             next_player = "lord"
         return player_state, next_player, is_end
 
     def first_player(self):
         return "lord"
+
+    def legal_actions(
+            self,
+            last_action: Action,
+            own_hand: Hand,
+            player_name: str
+    ) -> list[Action]:
+        # todo
+        pass
