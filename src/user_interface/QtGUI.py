@@ -11,33 +11,25 @@ from core.observation import GameObs, FullGameObs
 from core.game import GameInfo
 
 
-# def get_observation():
-
-
 class QtGUI(AbstractGUI):
     def __init__(self):
         super(QtGUI, self).__init__()
         self.app = QApplication(sys.argv)
         self.win = self.Window()
-        self.initUI()
+        self.backendthread = QThread()
+        self.backend = QtGUI.BackendThread()
+        self.backend.update_.connect(self.win.handleDisplayDuringGame)
+        self.backend.moveToThread(self.backendthread)
+        self.backendthread.started.connect(self.backend.run)
 
     def set_func_get_observation(self, f):
-        # print(f())
         self.backend.get_observation = f
-        # print(self.backend.get_observation())
 
     def set_func_get_history(self, f):
         self.backend.get_history = f
 
     def set_func_get_game_info(self, f):
         self.backend.get_game_info = f
-
-    def initUI(self):
-        self.backendthread = QThread()
-        self.backend = QtGUI.BackendThread()
-        self.backend.update_.connect(self.win.handleDisplayDuringGame)
-        self.backend.moveToThread(self.backendthread)
-        self.backendthread.started.connect(self.backend.run)
 
     class BackendThread(QObject):
 
@@ -47,7 +39,6 @@ class QtGUI(AbstractGUI):
             super(QtGUI.BackendThread, self).__init__()
 
         def run(self):
-            # print("run")
             while True:
                 for i in range(1, 11):
                     # print("here")
@@ -63,6 +54,7 @@ class QtGUI(AbstractGUI):
                         time.sleep(0.1)
                     else:
                         pass
+
         def get_observation(self) -> GameObs:
             pass
 
@@ -81,10 +73,6 @@ class QtGUI(AbstractGUI):
             self.input.resize(400, 100)
 
         def handleDisplayDuringGame(self, obs: GameObs, info: GameInfo):
-            # self.input.setText(data)
-            # print(obs)p
-            # print("handl")
-            # self.input.setText("test")
             self.input.setText(str(obs.nr_players) + info.current_player_name)
 
         def handleDisplayBeforeGame(self):
@@ -99,5 +87,4 @@ class QtGUI(AbstractGUI):
 
 if __name__ == "__main__":
     gui = QtGUI()
-    # print(gui.win)
     gui.mainloop()

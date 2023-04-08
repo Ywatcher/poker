@@ -43,7 +43,6 @@ class Game(ABC):
         # discarded cards
         self.player_states = rule.init_state()
         self.player_hands: dict[str, Hand] = {}
-        # self.is_end = False
         self.player_observations = {}
         self.info = GameInfo(is_started=False, is_ended=False)
         self.player_agents: dict[str, Agent] = {}
@@ -65,7 +64,6 @@ class Game(ABC):
         while not self.info.is_ended:
             obs = self.get_observation(player_name=self.info.current_player_name)
             # play
-            # print(self.info)
             legal_actions = self.rule.legal_actions(
                 last_action=last_action,
                 player_name=self.info.current_player_name,

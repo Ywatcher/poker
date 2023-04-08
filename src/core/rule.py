@@ -4,7 +4,7 @@ import random
 
 import torch
 
-from ontology.elements import CardSuit, CardFace, Card, Action, Hand
+from ontology.elements import CardSuit, CardFace, Card, Action, Hand, FoldAction, CardSet
 
 
 class Rule(ABC):
@@ -61,6 +61,15 @@ class Rule(ABC):
 
 
 class NaiveFxxkLandLord(Rule):
+    single = "single"
+    suited = "suited"
+    three = "3"
+    three_plus_1 = "3+1"
+    three_plus_2 = "3+2"
+    bomb = "bomb"
+    four_plus_2 = "4+2"
+    straight = "straight"
+
     class PlayerEncoder(Rule.PlayerEncoder):
         def __init__(self):
             self.dict = {
@@ -92,6 +101,20 @@ class NaiveFxxkLandLord(Rule):
             p: "on_going" for p in self.players
         }
 
+        self.search_dict = {
+            self.single: self.search_single,
+            self.suited: self.search_suited,
+            self.three: self.search_three,
+            self.three_plus_1: self.search_three_plus_1,
+            self.three_plus_2: self.search_three_plus_2,
+            self.bomb: self.search_bomb,
+            self.four_plus_2: self.search_four_plus_2,
+            self.straight: self.search_straight
+        }
+
+    def all_cards(self) -> set[Card]:
+        return set(self.cards)
+
     def player_list(self) -> list:
         return self.players
 
@@ -105,32 +128,25 @@ class NaiveFxxkLandLord(Rule):
         shuffle_index = list(range(self.nr_cards))
         random.seed(self.seed)
         random.shuffle(shuffle_index)
-        nr_card_for_each_player = [18, 17, 17]
+        # nr_card_for_each_player = [18, 17, 17]
         deal = {
-            "lord": shuffle_index[0:18],
-            "farmer_1": shuffle_index[18:18 + 17],
-            "farmer_2": shuffle_index[18 + 17:18 + 17 + 17]
+            "lord": [self.cards[i] for i in shuffle_index[0:18]],
+            "farmer_1": [self.cards[i] for i in shuffle_index[18:18 + 17]],
+            "farmer_2": [self.cards[i] for i in shuffle_index[18 + 17:18 + 17 + 17]]
         }
-
         return deal
 
     def judge(self, player_state: dict, current_player, hands) -> tuple:
-        # print(player_state)
         assert player_state[current_player] == "on_going"
         if "pass_1" in player_state.values():
-            # print("1pass")
             two_passed = True
         else:
-            # print("2pass")
             two_passed = False
         if "pass_0" in player_state.values():
-            # print("1pass")
             one_passed = True
         else:
             one_passed = False
-        # print(1)
         if len(hands[current_player]) == 0:
-            # print("he")
             if two_passed:
                 player_state[current_player] = "pass_2"
             elif one_passed:
@@ -168,5 +184,267 @@ class NaiveFxxkLandLord(Rule):
             own_hand: Hand,
             player_name: str
     ) -> list[Action]:
-        # todo
+        if isinstance(last_action, FoldAction):
+            action_fold_upon = last_action.upon
+            if last_action.player == "start" or action_fold_upon.player == player_name:
+                # call
+                # cannot fold
+                own_hand_card_set = sorted(own_hand.cards)
+                actions = []
+                for tag in self.search_dict.keys():
+                    actions += [Action(player=player_name, cards=c, tag=tag)
+                                for c in self.search_dict[tag](own_hand_card_set)]
+                return actions
+                # return (
+                #         [Action(player=player_name, cards=c, tag=self.single)
+                #          for c in self.search_single(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.suited)
+                #            for c in self.search_suited(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.three)
+                #            for c in self.search_three(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.three_plus_1)
+                #            for c in self.search_three_plus_1(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.three_plus_2)
+                #            for c in self.search_three_plus_2(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.bomb)
+                #            for c in self.search_bomb(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.four_plus_2)
+                #            for c in self.search_four_plus_2(own_hand_card_set)]
+                #         + [Action(player=player_name, cards=c, tag=self.straight)
+                #            for c in self.search_straight(own_hand_card_set)]
+                # )
+            else:
+                return self.legal_actions(
+                    last_action=action_fold_upon,
+                    own_hand=own_hand,
+                    player_name=player_name
+                )
+        else:
+            # follow
+            own_hand_card_set = sorted(own_hand.cards)
+            if last_action.tag in self.search_dict:
+                actions = [
+                    Action(player=player_name, cards=c, tag=last_action.tag)
+                    for c in self.search_dict[last_action.tag](own_hand_card_set, greater_than=last_action)
+                ]
+            # if last_action.tag == self.single:
+            #     actions = [
+            #         Action(player=player_name, cards=c, tag=self.single)
+            #         for c in self.search_single(own_hand_card_set, greater_than=last_action)
+            #     ]
+            # elif last_action.tag == self.suited:
+            #     actions = [
+            #         Action(player=player_name, cards=c, tag=self.suited)
+            #         for c in self.search_suited(own_hand_card_set, greater_than=last_action)
+            #     ]
+            # elif last_action.tag == self.three:
+            #     actions = [
+            #         Action(player=player_name, cards=c, tag=self.three)
+            #         for c in self.search_three(own_hand_card_set, greater_than=last_action)
+            #     ]
+            # elif last_action.tag == self.three_plus_1:
+            #     actions = [
+            #         Action(player=player_name,cards=c, tag=self.three_plus_1)
+            #         for c in self.search_three_plus_1(own_hand_card_set,greater_than=last_action)
+            #     ]
+            else:
+                assert False
+            actions.append(FoldAction(player=player_name, upon=last_action))
         pass
+
+    # functions below: assume sorted
+    @staticmethod
+    def search_single(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        if greater_than is not None:
+            last_action_card = greater_than[0]
+            return [
+                CardSet([card]) for card in card_set.cards if card > last_action_card
+            ]
+        else:
+            return [
+                CardSet([card]) for card in card_set.cards
+            ]
+
+    @staticmethod
+    def search_suited(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        nr_cards = len(card_set)
+        if greater_than is not None:
+            last_action_card = greater_than[0]
+            return [
+                CardSet([card_set[i], card_set[i + 1]]) for i in range(nr_cards - 1)
+                if card_set[i] > last_action_card and
+                   card_set[i].face == card_set[i + 1].face
+            ]
+        else:
+            return [
+                CardSet([card_set[i], card_set[i + 1]]) for i in range(nr_cards - 1)
+                if card_set[i].face == card_set[i + 1].face
+            ]
+
+    @staticmethod
+    def search_three(card_set, greater_than=None) -> list[CardSet]:
+        nr_cards = len(card_set)
+        if greater_than is not None:
+            last_action_card = greater_than[0]
+            return [
+                CardSet([card_set[i], card_set[i + 1], card_set[i + 2]]) for i in range(nr_cards - 2)
+                if card_set[i] > last_action_card and
+                   card_set[i].face == card_set[i + 2].face
+            ]
+        else:
+            return [
+                CardSet([card_set[i], card_set[i + 1], card_set[i + 2]]) for i in range(nr_cards - 2)
+                if card_set[i].face == card_set[i + 2].face
+            ]
+
+    @staticmethod
+    def search_three_plus_1(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        nr_cards = len(card_set)
+        if greater_than is not None:
+            paired_value = NaiveFxxkLandLord.get_paired_value(greater_than, pair_size=3)
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2],
+                    card_set[j]
+                ]) for i in range(nr_cards - 2) for j in range(nr_cards)
+                if card_set[i].face > paired_value and
+                   card_set[i].face == card_set[i + 2].face and
+                   card_set[i].face != card_set[j].face
+            ]
+        else:
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2],
+                    card_set[j]
+                ]) for i in range(nr_cards - 2) for j in range(nr_cards)
+                if card_set[i].face == card_set[i + 2].face and
+                   card_set[i].face != card_set[j].face
+            ]
+
+    @staticmethod
+    def search_three_plus_2(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        nr_cards = len(card_set)
+        if greater_than is not None:
+            paired_value = NaiveFxxkLandLord.get_paired_value(greater_than, pair_size=3)
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2],
+                    card_set[j], card_set[j + 1]
+                ]) for i in range(nr_cards - 2) for j in range(nr_cards - 1)
+                if card_set[i].face > paired_value and
+                   card_set[i].face == card_set[i + 2].face and
+                   card_set[j].face == card_set[j + 1].face and
+                   card_set[i].face != card_set[j].face
+            ]
+        else:
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2],
+                    card_set[j], card_set[j + 1]
+                ]) for i in range(nr_cards - 2) for j in range(nr_cards - 1)
+                if card_set[i].face == card_set[i + 2].face and
+                   card_set[j].face == card_set[j + 1].face and
+                   card_set[i].face != card_set[j].face
+            ]
+
+    @staticmethod
+    def search_bomb(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        nr_cards = len(card_set)
+        if greater_than is not None:
+            last_action_card = greater_than[0]
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3]
+                ]) for i in range(nr_cards - 3)
+                if card_set[i].face == card_set[i + 3].face and
+                   card_set[i] > last_action_card
+            ]
+        else:
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3]
+                ]) for i in range(nr_cards - 3)
+                if card_set[i].face == card_set[i + 3].face
+            ]
+
+    @staticmethod
+    def search_four_plus_2(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        nr_cards = len(card_set)
+        if greater_than is not None:
+            paired_value = NaiveFxxkLandLord.get_paired_value(greater_than, pair_size=4)
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3],
+                    card_set[j], card_set[j + 1]
+                ]) for i in range(nr_cards - 3) for j in range(nr_cards - 1)
+                if card_set[i].face == card_set[i + 3].face and
+                   card_set[i].face > paired_value and
+                   card_set[i].face != card_set[j].face and
+                   card_set[j].face == card_set[j + 1].face
+            ]
+        else:
+            return [CardSet(
+                [
+                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3],
+                    card_set[j], card_set[j + 1]
+                ]) for i in range(nr_cards - 3) for j in range(nr_cards - 1)
+                if card_set[i].face == card_set[i + 3].face and
+                   card_set[i].face != card_set[j].face and
+                   card_set[j].face == card_set[j + 1].face
+            ]
+
+    @staticmethod
+    def search_straight(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        # prune the search space since there are no difference among the four suits
+        # min: 34567
+        # max: 10JQKA
+        # todo
+        suit_eliminated = [
+            card_set[i] for i in range(len(card_set))
+            if i == 0 or card_set[i] > card_set[i - 1] and
+               card_set[i].face != CardFace._2
+        ]
+        nr_faces = len(suit_eliminated)
+        if greater_than is not None:
+            size_of_straight = len(greater_than)
+            return [CardSet(
+                [
+                    suit_eliminated[i:i + size_of_straight]
+                    for i in range(nr_faces - size_of_straight + 1)
+                    if suit_eliminated[i] > greater_than[0] and
+                    suit_eliminated[i] + size_of_straight - 1 == suit_eliminated[i + size_of_straight - 1]
+                ])
+            ]
+        else:
+            valid_sets = []
+            for size_of_straight in range(5, nr_faces + 1):
+                valid_set_of_this_size = [CardSet(
+                    [
+                        suit_eliminated[i:i + size_of_straight]
+                        for i in range(nr_faces - size_of_straight + 1)
+                        if suit_eliminated[i] + size_of_straight - 1 == suit_eliminated[i + size_of_straight - 1]
+                    ])
+                ]
+                if len(valid_set_of_this_size) == 0:
+                    break
+                valid_sets += valid_set_of_this_size
+            return valid_sets
+
+    @staticmethod
+    def get_paired_value(card_set: CardSet, pair_size: int) -> CardFace:
+        face_values = [
+            card.face for card in card_set.cards
+        ]
+        for face in list(set(face_values)):
+            if face_values.count(face) == pair_size:
+                return face
+        assert False
+
+
+if __name__ == "__main__":
+    rule = NaiveFxxkLandLord()
+    # deal = rule.deal()
+    # print(rule.cards)
+    # print(deal)
+    # lord = deal["lord"]
+    # print(sorted(lord))

@@ -22,6 +22,18 @@ class Card:
     def __eq__(self, other):
         return self.value == other.value
 
+    def __lt__(self, other):
+        return self.value < other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __str__(self):
+        return "{}-{}".format(self.suit.name_()[0], self.face.name_())
+
+    def __repr__(self):
+        return "{}-{}".format(self.suit.name_(), self.face.name_())
+
 
 class CardSet:
     def __init__(self, cards=None):
@@ -34,6 +46,18 @@ class CardSet:
 
     def __len__(self):
         return len(self.cards)
+
+    def __str__(self):
+        return "[" + ", ".join([str(c) for c in self.cards]) + "]"
+
+    def __repr__(self):
+        return "CardSet(" + self.__str__() + ")"
+
+    def sort(self, reverse: bool = False):
+        self.cards.sort(reverse=reverse)
+
+    def __getitem__(self, item):
+        return self.cards[item]
 
 
 class Hand(CardSet):
@@ -51,15 +75,17 @@ class Hand(CardSet):
 
 
 class Action(CardSet):
-    def __init__(self, player, cards):
+    def __init__(self, player, cards, tag):
         super(Action, self).__init__(cards)
         self.player = player
+        self.tag = tag
 
 
 class FoldAction(Action):
     # when starting game
-    def __init__(self,player):
-        super(FoldAction, self).__init__(player=player, cards=None)
+    def __init__(self, player, upon: Action = None):
+        super(FoldAction, self).__init__(player=player, cards=None, tag="fold")
+        self.upon = upon
 
 
 if __name__ == "__main__":

@@ -12,4 +12,6 @@ class NaiveAgent(Agent):
 
     def action(self, obs: GameObs, legal_actions: list[Action]) -> Action:
         time.sleep(1)
+        # return legal_actions[0]
+
 

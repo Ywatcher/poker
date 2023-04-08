@@ -20,9 +20,8 @@ def main():
         game_manager.setAgent(NaiveAgent(), name)
     thread = threading.Thread(target=game.run)
     thread.start()
-    print(game.info)
+    # print(game.info)
     gui.mainloop()
-    # game.run()
 
 
 if __name__ == "__main__":

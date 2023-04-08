@@ -15,29 +15,40 @@ class CardFace(Enum):
     J = 8
     Q = 9
     K = 10
-    _1 = 11
+    A = 11
     _2 = 12
 
+    def name_(self) -> str:
+        return self.name.strip('_')
+
+    @property
+    def 2(self):
+        return self._2
 
 
 class CardSuit(Enum):
-    spade = 0 # "Spade"
-    heart = 1 # "Heart"
-    club = 2 # "Club"
-    diamond = 3 # "Diamond"
+    spade = 0  # "Spade"
+    heart = 1  # "Heart"
+    club = 2  # "Club"
+    diamond = 3  # "Diamond"
 
-    def name(self) -> str:
-        if self == 0:
-            return "Spade"
-        elif self == 1:
-            return "Heart"
-        elif self == 2:
-            return "Club"
-        else:
-            return "Diamond"
+    def name_(self) -> str:
+        # if self == 0:
+        #     return "Spade"
+        # elif self == 1:
+        #     return "Heart"
+        # elif self == 2:
+        #     return "Club"
+        # else:
+        #     return "Diamond"
 
+        return self.name[0].capitalize() + self.name[1:]
 
 
 if __name__ == "__main__":
     spade = CardSuit.spade
     print(spade.value)
+    for i in range(13):
+        f = CardFace(i)
+        print(f.name)
+    print(CardSuit(1))
