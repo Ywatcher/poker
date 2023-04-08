@@ -95,9 +95,12 @@ class FullObsGame(Game):
         super(FullObsGame, self).__init__(rule)
 
     def update_observations(self, action: Action):
+        # print("update obs")
+        # print(self.hands)
+        # print(self.player_hands["farmer_2"])
         self.player_observations = {
             player_name: FullGameObs(
-                hands={p: self.hands[p] for p in self.player_hands.keys() if p != player_name},
+                hands={p: self.player_hands[p] for p in self.player_hands.keys() if p != player_name},
                 your_own_hand={player_name: self.player_hands[player_name]},
                 last_action=action,
                 nr_players=len(self.player_states),
