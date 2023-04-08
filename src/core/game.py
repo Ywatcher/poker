@@ -64,17 +64,21 @@ class Game(ABC):
         while not self.info.is_ended:
             obs = self.get_observation(player_name=self.info.current_player_name)
             # play
+            # tst=(self.player_hands[self.info.current_player_name])
+            # print(type(tst))
             legal_actions = self.rule.legal_actions(
                 last_action=last_action,
                 player_name=self.info.current_player_name,
                 own_hand=self.player_hands[self.info.current_player_name]
             )
             action = self.player_agents[self.info.current_player_name].action(obs, legal_actions)
+            self.update_state(action)
             self.update_observations(action)
             self.player_states, self.info.current_player_name, self.info.is_ended = self.rule.judge(
                 self.player_states, self.info.current_player_name, self.player_hands
             )
-            self.info.iter = self.info.iter+1
+            self.info.iter = self.info.iter + 1
+            last_action = action
 
     @classmethod
     def update_observations(cls, action: Action):
@@ -82,6 +86,10 @@ class Game(ABC):
 
     def get_observation(self, player_name: str) -> GameObs:
         return self.player_observations[player_name]
+
+    @classmethod
+    def update_state(cls, action: Action):
+        pass
 
 
 class FullObsGame(Game):
@@ -98,6 +106,12 @@ class FullObsGame(Game):
                 encoder=self.player_encoder
             ) for player_name in self.player_states.keys()
         }
+
+    def update_state(self, action: Action):
+        current_player = action.player
+        self.player_hands[current_player].remove(cards=action.cards)
+        self.log.add_record(record=action)
+        print(action,action.tag)
 
 
 class PartialObsGame(Game):

@@ -80,6 +80,12 @@ class Action(CardSet):
         self.player = player
         self.tag = tag
 
+    def __str__(self):
+        return "player: {}, ".format(self.player) + super(Action, self).__str__()
+
+    def __repr__(self):
+        return "Action("+self.__str__()+")"
+
 
 class FoldAction(Action):
     # when starting game

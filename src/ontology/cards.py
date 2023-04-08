@@ -21,9 +21,11 @@ class CardFace(Enum):
     def name_(self) -> str:
         return self.name.strip('_')
 
-    @property
-    def 2(self):
-        return self._2
+    def __le__(self, other):
+        return self.value<=other.value
+
+    def __lt__(self, other):
+        return self.value<other.value
 
 
 class CardSuit(Enum):

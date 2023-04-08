@@ -184,35 +184,22 @@ class NaiveFxxkLandLord(Rule):
             own_hand: Hand,
             player_name: str
     ) -> list[Action]:
+        own_hand.sort()
+        # print(type(own_hand))
         if isinstance(last_action, FoldAction):
+
             action_fold_upon = last_action.upon
+            print("last was fold upon", action_fold_upon)
             if last_action.player == "start" or action_fold_upon.player == player_name:
                 # call
                 # cannot fold
-                own_hand_card_set = sorted(own_hand.cards)
+                # own_hand_card_set = sorted(own_hand)
+                # print(type(own_hand_card_set))
                 actions = []
                 for tag in self.search_dict.keys():
                     actions += [Action(player=player_name, cards=c, tag=tag)
-                                for c in self.search_dict[tag](own_hand_card_set)]
+                                for c in self.search_dict[tag](own_hand)]
                 return actions
-                # return (
-                #         [Action(player=player_name, cards=c, tag=self.single)
-                #          for c in self.search_single(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.suited)
-                #            for c in self.search_suited(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.three)
-                #            for c in self.search_three(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.three_plus_1)
-                #            for c in self.search_three_plus_1(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.three_plus_2)
-                #            for c in self.search_three_plus_2(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.bomb)
-                #            for c in self.search_bomb(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.four_plus_2)
-                #            for c in self.search_four_plus_2(own_hand_card_set)]
-                #         + [Action(player=player_name, cards=c, tag=self.straight)
-                #            for c in self.search_straight(own_hand_card_set)]
-                # )
             else:
                 return self.legal_actions(
                     last_action=action_fold_upon,
@@ -221,40 +208,21 @@ class NaiveFxxkLandLord(Rule):
                 )
         else:
             # follow
-            own_hand_card_set = sorted(own_hand.cards)
+            # own_hand_card_set = sorted(own_hand)
             if last_action.tag in self.search_dict:
                 actions = [
                     Action(player=player_name, cards=c, tag=last_action.tag)
-                    for c in self.search_dict[last_action.tag](own_hand_card_set, greater_than=last_action)
+                    for c in self.search_dict[last_action.tag](own_hand, greater_than=last_action)
                 ]
-            # if last_action.tag == self.single:
-            #     actions = [
-            #         Action(player=player_name, cards=c, tag=self.single)
-            #         for c in self.search_single(own_hand_card_set, greater_than=last_action)
-            #     ]
-            # elif last_action.tag == self.suited:
-            #     actions = [
-            #         Action(player=player_name, cards=c, tag=self.suited)
-            #         for c in self.search_suited(own_hand_card_set, greater_than=last_action)
-            #     ]
-            # elif last_action.tag == self.three:
-            #     actions = [
-            #         Action(player=player_name, cards=c, tag=self.three)
-            #         for c in self.search_three(own_hand_card_set, greater_than=last_action)
-            #     ]
-            # elif last_action.tag == self.three_plus_1:
-            #     actions = [
-            #         Action(player=player_name,cards=c, tag=self.three_plus_1)
-            #         for c in self.search_three_plus_1(own_hand_card_set,greater_than=last_action)
-            #     ]
             else:
                 assert False
             actions.append(FoldAction(player=player_name, upon=last_action))
-        pass
+            return actions
 
     # functions below: assume sorted
     @staticmethod
     def search_single(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
+        # print(type(card_set))
         if greater_than is not None:
             last_action_card = greater_than[0]
             return [
@@ -398,7 +366,6 @@ class NaiveFxxkLandLord(Rule):
         # prune the search space since there are no difference among the four suits
         # min: 34567
         # max: 10JQKA
-        # todo
         suit_eliminated = [
             card_set[i] for i in range(len(card_set))
             if i == 0 or card_set[i] > card_set[i - 1] and
@@ -407,23 +374,19 @@ class NaiveFxxkLandLord(Rule):
         nr_faces = len(suit_eliminated)
         if greater_than is not None:
             size_of_straight = len(greater_than)
-            return [CardSet(
-                [
-                    suit_eliminated[i:i + size_of_straight]
-                    for i in range(nr_faces - size_of_straight + 1)
-                    if suit_eliminated[i] > greater_than[0] and
-                    suit_eliminated[i] + size_of_straight - 1 == suit_eliminated[i + size_of_straight - 1]
-                ])
+            return [
+                CardSet(suit_eliminated[i:i + size_of_straight])
+                for i in range(nr_faces - size_of_straight + 1)
+                if suit_eliminated[i] > greater_than[0] and
+                   suit_eliminated[i] + size_of_straight - 1 == suit_eliminated[i + size_of_straight - 1]
             ]
         else:
             valid_sets = []
             for size_of_straight in range(5, nr_faces + 1):
-                valid_set_of_this_size = [CardSet(
-                    [
-                        suit_eliminated[i:i + size_of_straight]
-                        for i in range(nr_faces - size_of_straight + 1)
-                        if suit_eliminated[i] + size_of_straight - 1 == suit_eliminated[i + size_of_straight - 1]
-                    ])
+                valid_set_of_this_size = [
+                    CardSet(suit_eliminated[i:i + size_of_straight]) for i in range(nr_faces - size_of_straight + 1)
+                    if
+                    suit_eliminated[i].value + size_of_straight - 1 == suit_eliminated[i + size_of_straight - 1].value
                 ]
                 if len(valid_set_of_this_size) == 0:
                     break
