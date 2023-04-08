@@ -64,8 +64,6 @@ class Game(ABC):
         while not self.info.is_ended:
             obs = self.get_observation(player_name=self.info.current_player_name)
             # play
-            # tst=(self.player_hands[self.info.current_player_name])
-            # print(type(tst))
             legal_actions = self.rule.legal_actions(
                 last_action=last_action,
                 player_name=self.info.current_player_name,

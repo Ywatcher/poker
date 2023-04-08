@@ -185,16 +185,12 @@ class NaiveFxxkLandLord(Rule):
             player_name: str
     ) -> list[Action]:
         own_hand.sort()
-        # print(type(own_hand))
         if isinstance(last_action, FoldAction):
-
             action_fold_upon = last_action.upon
             print("last was fold upon", action_fold_upon)
             if last_action.player == "start" or action_fold_upon.player == player_name:
                 # call
                 # cannot fold
-                # own_hand_card_set = sorted(own_hand)
-                # print(type(own_hand_card_set))
                 actions = []
                 for tag in self.search_dict.keys():
                     actions += [Action(player=player_name, cards=c, tag=tag)
@@ -208,7 +204,6 @@ class NaiveFxxkLandLord(Rule):
                 )
         else:
             # follow
-            # own_hand_card_set = sorted(own_hand)
             if last_action.tag in self.search_dict:
                 actions = [
                     Action(player=player_name, cards=c, tag=last_action.tag)
@@ -250,18 +245,18 @@ class NaiveFxxkLandLord(Rule):
             ]
 
     @staticmethod
-    def search_three(card_set, greater_than=None) -> list[CardSet]:
+    def search_three(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
         nr_cards = len(card_set)
         if greater_than is not None:
             last_action_card = greater_than[0]
             return [
-                CardSet([card_set[i], card_set[i + 1], card_set[i + 2]]) for i in range(nr_cards - 2)
+                CardSet(card_set.cards[i:i + 3]) for i in range(nr_cards - 2)
                 if card_set[i] > last_action_card and
                    card_set[i].face == card_set[i + 2].face
             ]
         else:
             return [
-                CardSet([card_set[i], card_set[i + 1], card_set[i + 2]]) for i in range(nr_cards - 2)
+                CardSet(card_set.cards[i:i + 3]) for i in range(nr_cards - 2)
                 if card_set[i].face == card_set[i + 2].face
             ]
 
@@ -271,20 +266,16 @@ class NaiveFxxkLandLord(Rule):
         if greater_than is not None:
             paired_value = NaiveFxxkLandLord.get_paired_value(greater_than, pair_size=3)
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2],
-                    card_set[j]
-                ]) for i in range(nr_cards - 2) for j in range(nr_cards)
+                card_set.cards[i:i + 3] + [card_set[j]]
+            ) for i in range(nr_cards - 2) for j in range(nr_cards)
                 if card_set[i].face > paired_value and
                    card_set[i].face == card_set[i + 2].face and
                    card_set[i].face != card_set[j].face
             ]
         else:
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2],
-                    card_set[j]
-                ]) for i in range(nr_cards - 2) for j in range(nr_cards)
+                card_set.cards[i:i + 3] + [card_set[j]]
+            ) for i in range(nr_cards - 2) for j in range(nr_cards)
                 if card_set[i].face == card_set[i + 2].face and
                    card_set[i].face != card_set[j].face
             ]
@@ -295,10 +286,8 @@ class NaiveFxxkLandLord(Rule):
         if greater_than is not None:
             paired_value = NaiveFxxkLandLord.get_paired_value(greater_than, pair_size=3)
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2],
-                    card_set[j], card_set[j + 1]
-                ]) for i in range(nr_cards - 2) for j in range(nr_cards - 1)
+                card_set.cards[i:i + 3] + card_set.cards[j:j + 2]
+            ) for i in range(nr_cards - 2) for j in range(nr_cards - 1)
                 if card_set[i].face > paired_value and
                    card_set[i].face == card_set[i + 2].face and
                    card_set[j].face == card_set[j + 1].face and
@@ -306,10 +295,8 @@ class NaiveFxxkLandLord(Rule):
             ]
         else:
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2],
-                    card_set[j], card_set[j + 1]
-                ]) for i in range(nr_cards - 2) for j in range(nr_cards - 1)
+                card_set.cards[i:i + 3] + card_set.cards[j:j + 2]
+            ) for i in range(nr_cards - 2) for j in range(nr_cards - 1)
                 if card_set[i].face == card_set[i + 2].face and
                    card_set[j].face == card_set[j + 1].face and
                    card_set[i].face != card_set[j].face
@@ -321,17 +308,15 @@ class NaiveFxxkLandLord(Rule):
         if greater_than is not None:
             last_action_card = greater_than[0]
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3]
-                ]) for i in range(nr_cards - 3)
+                card_set.cards[i:i + 4]
+            ) for i in range(nr_cards - 3)
                 if card_set[i].face == card_set[i + 3].face and
                    card_set[i] > last_action_card
             ]
         else:
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3]
-                ]) for i in range(nr_cards - 3)
+                card_set.cards[i:i + 4]
+            ) for i in range(nr_cards - 3)
                 if card_set[i].face == card_set[i + 3].face
             ]
 
@@ -341,10 +326,8 @@ class NaiveFxxkLandLord(Rule):
         if greater_than is not None:
             paired_value = NaiveFxxkLandLord.get_paired_value(greater_than, pair_size=4)
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3],
-                    card_set[j], card_set[j + 1]
-                ]) for i in range(nr_cards - 3) for j in range(nr_cards - 1)
+                card_set.cards[i:i + 4] + card_set.cards[j:j + 2]
+            ) for i in range(nr_cards - 3) for j in range(nr_cards - 1)
                 if card_set[i].face == card_set[i + 3].face and
                    card_set[i].face > paired_value and
                    card_set[i].face != card_set[j].face and
@@ -352,10 +335,8 @@ class NaiveFxxkLandLord(Rule):
             ]
         else:
             return [CardSet(
-                [
-                    card_set[i], card_set[i + 1], card_set[i + 2], card_set[i + 3],
-                    card_set[j], card_set[j + 1]
-                ]) for i in range(nr_cards - 3) for j in range(nr_cards - 1)
+                card_set.cards[i:i + 4] + card_set.cards[j:j + 2]
+            ) for i in range(nr_cards - 3) for j in range(nr_cards - 1)
                 if card_set[i].face == card_set[i + 3].face and
                    card_set[i].face != card_set[j].face and
                    card_set[j].face == card_set[j + 1].face
@@ -404,10 +385,3 @@ class NaiveFxxkLandLord(Rule):
         assert False
 
 
-if __name__ == "__main__":
-    rule = NaiveFxxkLandLord()
-    # deal = rule.deal()
-    # print(rule.cards)
-    # print(deal)
-    # lord = deal["lord"]
-    # print(sorted(lord))

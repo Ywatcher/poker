@@ -19,7 +19,7 @@ class FullGameObs(GameObs):
     def __init__(
             self,
             hands: dict[str, Hand],
-            your_own_hand: dict[str,Hand],
+            your_own_hand: dict[str, Hand],
             last_action: Action,
             nr_players: int,
             encoder: Rule.PlayerEncoder
