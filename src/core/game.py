@@ -70,7 +70,7 @@ class Game(ABC):
                 own_hand=self.player_hands[self.info.current_player_name],
                 player_state=self.player_states
             )
-            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions, self.player_states)
+            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions, self.player_states.copy())
             self.update_state(action)
             self.update_observations(action)
             self.player_states, self.info.current_player_name, self.info.is_ended = self.rule.judge(
@@ -78,7 +78,7 @@ class Game(ABC):
             )
             self.info.iter = self.info.iter + 1
             last_action = action
-        print("end")
+        print("end, winner:", self.rule.get_winner(player_state=self.player_states))
         # self.update_state(last_action)
         self.update_observations(last_action)
 
@@ -101,8 +101,8 @@ class FullObsGame(Game):
     def update_observations(self, action: Action):
         self.player_observations = {
             player_name: FullGameObs(
-                hands={p: self.player_hands[p] for p in self.player_hands.keys() if p != player_name},
-                your_own_hand={player_name: self.player_hands[player_name]},
+                hands={p: self.player_hands[p].copy() for p in self.player_hands.keys() if p != player_name},
+                your_own_hand={player_name: self.player_hands[player_name].copy()},
                 last_action=action,
                 nr_players=len(self.player_states),
                 encoder=self.player_encoder
@@ -114,6 +114,7 @@ class FullObsGame(Game):
         self.player_hands[current_player].remove(cards=action.cards)
         self.log.add_record(record=action)
         print(action,action.tag)
+        print(self.player_hands)
 
 
 class PartialObsGame(Game):

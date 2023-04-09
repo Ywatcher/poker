@@ -108,15 +108,7 @@ class MiniMaxAgent(Agent):
             if self.is_leaf():  # __expand() will not be called (in minimax()) if the node is a leaf
                 assert False
             else:
-                # if self.game_state.player_state
-
-                #
-                # print("before expand")
-                # if self.parent is not None:
-                #     print(self.game_state)
-                #     print(self.parent.game_state)
                 successors = self.problem.get_successors(self.game_state)
-                # print("aft expand")
                 self.__children = set(
                     MiniMaxAgent.MinimaxNode(
                         game_state=succ,
@@ -140,26 +132,10 @@ class MiniMaxAgent(Agent):
             :return: (updated alpha, updated beta, self's minimax score)
             """
             self.traversed = True
-            # if self.game_state.is_end:
-            #     print("end",self.game_state.is_end, self.is_leaf())
-            # else:
-            #     print("no")
             if self.is_leaf():
-                # print("here")
                 self.score = self.problem.score(self.game_state)
                 return alpha, beta, self.score
             else:
-                # print(self.is_leaf(),"hh")
-
-                # if self.game_state.player_state[self.game_state.player] != "on_going":
-                #     print(self.game_state.player_state)
-                #     print(self.game_state.player)
-                #     print("hands",self.game_state.player_hands)
-                #     print("parent")
-                #     print(self.parent.game_state.player_state)
-                #     print(self.parent.game_state.player)
-                #     print(self.parent.game_state.player_hands)
-                #     print("action",self.game_state.last_action)
                 if len(self.get_children()) == 0:  # not possible for this problem
                     assert 0
                     # self.score = - np.inf
@@ -234,9 +210,6 @@ class MiniMaxAgent(Agent):
                 self,
                 search_state: "MiniMaxAgent.GameSearchState"
         ) -> list["MiniMaxAgent.GameSearchState"]:
-            # print(search_state.player_hands)
-            # print(search_state.player)
-            # print(search_state.player_hands[search_state.player])
             if search_state.legal_actions is None:
                 assert search_state.last_action is not None
                 legal_actions = self.rule.legal_actions(
@@ -251,28 +224,16 @@ class MiniMaxAgent(Agent):
             successors = []
             assert len(legal_actions) != 0
             for action in legal_actions:
-                # print("action:",action)
                 next_player_hand = {
                     p: search_state.player_hands[p].copy()
                     for p in search_state.player_hands
                 }
                 next_player_hand[search_state.player].remove(action.cards)
-                # print(search_state.player_state)
                 next_player_state, next_player, is_end = self.rule.judge(
                     search_state.player_state.copy(),
                     search_state.player,
                     next_player_hand
                 )
-                # if is_end:
-                #     print("this state:",search_state.player_state)
-                #     print("this player",search_state.player)
-                #     print("next_player",next_player)
-                # successors.append((
-                #     next_player,
-                #     next_player_state,
-                #     search_state.player_hands,
-                #     action
-                # ))
                 successors.append(MiniMaxAgent.GameSearchState(
                     player=next_player,
                     player_hands=next_player_hand,

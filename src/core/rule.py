@@ -141,7 +141,10 @@ class NaiveFxxkLandLord(Rule):
         return deal
 
     def judge(self, player_state: dict, current_player, hands) -> tuple:
-        assert player_state[current_player] == "on_going"
+        if not player_state[current_player] == "on_going":
+            print("current player",current_player)
+            print(player_state)
+            assert 0
         if "pass_1" in player_state.values():
             two_passed = True
         else:
@@ -162,8 +165,7 @@ class NaiveFxxkLandLord(Rule):
             is_end = True
         else:
             is_end = False
-        if is_end:
-            return player_state, current_player, is_end
+
         if current_player == "lord":
             if player_state["farmer_1"] == "on_going":
                 next_player = "farmer_1"
@@ -192,7 +194,6 @@ class NaiveFxxkLandLord(Rule):
         own_hand.sort()
         if isinstance(last_action, FoldAction):
             action_fold_upon = last_action.upon
-            print("last was fold upon", action_fold_upon)
             if last_action.player == "start" or \
                     action_fold_upon.player == player_name or \
                     player_state[action_fold_upon.player] != "on_going":
