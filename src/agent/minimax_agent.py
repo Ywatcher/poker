@@ -15,8 +15,9 @@ class MiniMaxAgent(Agent):
     # the size of own hand
     # todo : costdif
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, player_name: str):
+        super().__init__(name="minimax", is_human=False)
+        self.player_name = player_name
         self.rule = NaiveFxxkLandLord()
         # 1 for max, -1 for min
 
@@ -24,7 +25,7 @@ class MiniMaxAgent(Agent):
         self.ret_depth = 2
         self.search_problem = MiniMaxAgent.MiniMaxSearchProblem(
             max_depth=self.search_depth,
-            player=self.name,
+            player=self.player_name,
             ret_depth=self.ret_depth,
             rule=self.rule
         )
@@ -39,7 +40,7 @@ class MiniMaxAgent(Agent):
         for p in obs.your_own_hand:
             player_hand.update({p: obs.your_own_hand[p].copy()})
         starting_state = MiniMaxAgent.GameSearchState(
-            player=self.name,
+            player=self.player_name,
             player_state=player_state,
             player_hands=player_hand,
             last_action=None,
@@ -51,7 +52,7 @@ class MiniMaxAgent(Agent):
             costdif=0,
             problem=self.search_problem
         )
-        root.minimax(alpha=-np.inf,beta=np.inf)
+        root.minimax(alpha=-np.inf, beta=np.inf)
         return root.get_best_action()
 
     class GameSearchState:
@@ -71,6 +72,11 @@ class MiniMaxAgent(Agent):
             self.legal_actions = legal_actions
             self.is_end = is_end
 
+        def __repr__(self):
+            return "GameSearchState(\nplayer: {}, player state: {}, \nplayer hand: {},\nlast_action: {}, is_end: {}\n)".format(
+                self.player,self.player_state,self.player_hands,self.last_action,self.is_end
+            )
+
     class MinimaxNode:
         def __init__(
                 self,
@@ -79,6 +85,8 @@ class MiniMaxAgent(Agent):
                 costdif: float,
                 problem: "MiniMaxAgent.MiniMaxSearchProblem",
         ):
+            # print("init gamestate",game_state)
+            assert isinstance(game_state, MiniMaxAgent.GameSearchState)
             self.parent: "MiniMaxAgent.MinimaxNode" = parent
             self.costdif = costdif
             self.depth: int = 0
@@ -100,7 +108,15 @@ class MiniMaxAgent(Agent):
             if self.is_leaf():  # __expand() will not be called (in minimax()) if the node is a leaf
                 assert False
             else:
+                # if self.game_state.player_state
+
+                #
+                # print("before expand")
+                # if self.parent is not None:
+                #     print(self.game_state)
+                #     print(self.parent.game_state)
                 successors = self.problem.get_successors(self.game_state)
+                # print("aft expand")
                 self.__children = set(
                     MiniMaxAgent.MinimaxNode(
                         game_state=succ,
@@ -124,10 +140,26 @@ class MiniMaxAgent(Agent):
             :return: (updated alpha, updated beta, self's minimax score)
             """
             self.traversed = True
+            # if self.game_state.is_end:
+            #     print("end",self.game_state.is_end, self.is_leaf())
+            # else:
+            #     print("no")
             if self.is_leaf():
+                # print("here")
                 self.score = self.problem.score(self.game_state)
                 return alpha, beta, self.score
             else:
+                # print(self.is_leaf(),"hh")
+
+                # if self.game_state.player_state[self.game_state.player] != "on_going":
+                #     print(self.game_state.player_state)
+                #     print(self.game_state.player)
+                #     print("hands",self.game_state.player_hands)
+                #     print("parent")
+                #     print(self.parent.game_state.player_state)
+                #     print(self.parent.game_state.player)
+                #     print(self.parent.game_state.player_hands)
+                #     print("action",self.game_state.last_action)
                 if len(self.get_children()) == 0:  # not possible for this problem
                     assert 0
                     # self.score = - np.inf
@@ -194,14 +226,17 @@ class MiniMaxAgent(Agent):
                 self.score = self.score_of_farmer
             # self.factor_opponent_choices = 1
             self.factor_opponent_cards = 1
-            self.factor_team_cards = 1
-            self.factor_win = 100
+            self.factor_team_cards = 10
+            self.factor_win = 500
             self.factor_lose = -100
 
         def get_successors(
                 self,
                 search_state: "MiniMaxAgent.GameSearchState"
-        ):
+        ) -> list["MiniMaxAgent.GameSearchState"]:
+            # print(search_state.player_hands)
+            # print(search_state.player)
+            # print(search_state.player_hands[search_state.player])
             if search_state.legal_actions is None:
                 assert search_state.last_action is not None
                 legal_actions = self.rule.legal_actions(
@@ -216,22 +251,28 @@ class MiniMaxAgent(Agent):
             successors = []
             assert len(legal_actions) != 0
             for action in legal_actions:
+                # print("action:",action)
                 next_player_hand = {
                     p: search_state.player_hands[p].copy()
                     for p in search_state.player_hands
                 }
                 next_player_hand[search_state.player].remove(action.cards)
-                next_player, next_player_state, is_end = self.rule.judge(
-                    search_state.player_state,
+                # print(search_state.player_state)
+                next_player_state, next_player, is_end = self.rule.judge(
+                    search_state.player_state.copy(),
                     search_state.player,
                     next_player_hand
                 )
-                successors.append((
-                    next_player,
-                    next_player_state,
-                    search_state.player_hands,
-                    action
-                ))
+                # if is_end:
+                #     print("this state:",search_state.player_state)
+                #     print("this player",search_state.player)
+                #     print("next_player",next_player)
+                # successors.append((
+                #     next_player,
+                #     next_player_state,
+                #     search_state.player_hands,
+                #     action
+                # ))
                 successors.append(MiniMaxAgent.GameSearchState(
                     player=next_player,
                     player_hands=next_player_hand,
@@ -239,6 +280,7 @@ class MiniMaxAgent(Agent):
                     last_action=action,
                     is_end=is_end
                 ))
+
             return successors
 
         def is_goal_state(self, game_state: "MiniMaxAgent.GameSearchState"):
@@ -254,15 +296,15 @@ class MiniMaxAgent(Agent):
             else:
                 return False
 
-        def score(self, game_state:"MiniMaxAgent.GameSearchState") -> float:
+        def score(self, game_state: "MiniMaxAgent.GameSearchState") -> float:
             pass
 
-        def score_of_farmer(self, game_state:"MiniMaxAgent.GameSearchState") -> float:
+        def score_of_farmer(self, game_state: "MiniMaxAgent.GameSearchState") -> float:
             if not game_state.is_end:
                 return (
-                    self.factor_opponent_cards*len(game_state.player_hands["lord"]) -
-                    self.factor_team_cards*len(game_state.player_hands["farmer_1"]) -
-                    self.factor_team_cards*len(game_state.player_hands["farmer_2"])
+                        self.factor_opponent_cards * len(game_state.player_hands["lord"])
+                        - self.factor_team_cards * len(game_state.player_hands["farmer_1"])
+                        - self.factor_team_cards * len(game_state.player_hands["farmer_2"])
                 )
             else:
                 if self.is_goal_state(game_state):
@@ -270,12 +312,12 @@ class MiniMaxAgent(Agent):
                 else:
                     return self.factor_lose
 
-        def score_of_lord(self, game_state:"MiniMaxAgent.GameSearchState") -> float:
+        def score_of_lord(self, game_state: "MiniMaxAgent.GameSearchState") -> float:
             if not game_state.is_end:
                 return (
-                    - self.factor_team_cards*len(game_state.player_hands["lord"]) +
-                    self.factor_opponent_cards*len(game_state.player_hands["farmer_1"]) +
-                    self.factor_opponent_cards*len(game_state.player_hands["farmer_2"])
+                        - self.factor_team_cards * len(game_state.player_hands["lord"])
+                        + self.factor_opponent_cards * len(game_state.player_hands["farmer_1"])
+                        + self.factor_opponent_cards * len(game_state.player_hands["farmer_2"])
                 )
             else:
                 if self.is_goal_state(game_state):
