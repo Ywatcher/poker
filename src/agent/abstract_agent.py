@@ -8,5 +8,10 @@ class Agent:
         self.name = name
         self.is_human = is_human
 
-    def action(self, obs: GameObs, legal_actions: list[Action]) -> Action:
+    def action(
+            self,
+            obs: GameObs,
+            legal_actions: list[Action],
+            player_state: dict
+    ) -> Action:
         pass

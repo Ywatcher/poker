@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import torch
 from torch.nn import functional as F
 from ontology.cards import CardSuit, CardFace
@@ -33,7 +32,6 @@ class Card:
 
     def __repr__(self):
         return "{}-{}".format(self.suit.name_(), self.face.name_())
-
 
 class CardSet:
     def __init__(self, cards=None):
@@ -72,6 +70,18 @@ class Hand(CardSet):
     def remove(self, cards: []):
         for card in cards:
             self.cards.remove(card)
+
+    def copy(self) -> "Hand":
+        return Hand(cards=self.cards.copy())
+
+
+class UnknownHand:
+    def __init__(self, nr_cards:int):
+        self.id = None
+        self.nr_cards = nr_cards
+
+    def __len__(self):
+        return self.nr_cards
 
 
 class Action(CardSet):

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 import time
 from typing import Union
@@ -27,8 +26,6 @@ class QtGUI(AbstractGUI):
         self.backend.update_.connect(self.win.handleDisplayDuringGame)
         self.backend.moveToThread(self.backendthread)
         self.backendthread.started.connect(self.backend.run)
-
-        # self.mainloop()
 
     def mainloop(self):
         self.backendthread.start()
@@ -78,9 +75,22 @@ class QtGUI(AbstractGUI):
         def get_history(self):
             pass
 
-    class CardSetWigdet(QWidget):
+    class CardSetWidget(QWidget):
+
+        pass
+
+    # class HistoryCardSetWidget(QWidget):
+    #     pass
+
+    class ObsCardSetWigdet(QWidget):
         def __init__(self, parent, name, pixmap: dict[str, QPixmap]):
-            super(QtGUI.CardSetWigdet, self).__init__(parent)
+            super(QtGUI.ObsCardSetWigdet, self).__init__(parent)
+            self.buffer_len = 24
+            # self.h_ = 128
+            self.w_label = 64
+            # self.w_ = 68*self.buffer_len + self.w_label
+            # self.setFixedHeight(self.h_)
+            # self.setFixedWidth(self.w_)
             self.card_set = CardSet()
             self.name = name
             self.pixmap = pixmap
@@ -99,10 +109,11 @@ class QtGUI(AbstractGUI):
             self.name_label.setText(self.name)
             self.name_label.setFont(QFont('Arial', 9))
             self.dot_label.setPixmap(self.pixmap["grey-dot"])
+            self.name_widget.setFixedWidth(self.w_label)
 
             # self.name_label.setFixedWidth(64)
             self.card_set_buffer = []
-            self.buffer_len = 24
+
             for id_pos in range(self.buffer_len):
                 self.card_set_buffer.append(QLabel(self))
                 self.hbox.addWidget(self.card_set_buffer[-1])
@@ -110,14 +121,13 @@ class QtGUI(AbstractGUI):
             self.is_current = False
 
         def update(self) -> None:
-            # todo : marker for current player
-            for c in range(self.buffer_len):  # todo : no pixmap for pos > len
+            for c in range(self.buffer_len):
                 if c < len(self.card_set):
                     card = self.card_set[c]
                     self.card_set_buffer[c].setPixmap(self.pixmap[str(card)])
                 else:
                     self.card_set_buffer[c].clear()
-            super(QtGUI.CardSetWigdet, self).update()
+            super(QtGUI.ObsCardSetWigdet, self).update()
 
         def set_cardset(self, cardset: Union[CardSet, list[Card]]):
             if cardset is not None:
@@ -132,11 +142,8 @@ class QtGUI(AbstractGUI):
             else:
                 self.dot_label.setPixmap(self.pixmap["grey-dot"])
 
-        # def set_label_size(self, size):
-        #     pass
-
-        def set_label_font(self, font):
-            pass
+        def set_label_font(self, font: QFont):
+            self.name_label.setFont(font)
 
     class ObsField(QFrame):
 
@@ -147,8 +154,9 @@ class QtGUI(AbstractGUI):
             vbox_top = QVBoxLayout(self.widget_top)
             self.widget_bot = QWidget(self)
             self.player_frames = {
-                p: QtGUI.CardSetWigdet(parent=self, name=p, pixmap=self.pixmap) for p in self.player_names
+                p: QtGUI.ObsCardSetWigdet(parent=self, name=p, pixmap=self.pixmap) for p in self.player_names
             }
+
             for p in self.player_names:
                 vbox_top.addWidget(self.player_frames[p])
             splitter.addWidget(self.widget_top)
@@ -156,6 +164,8 @@ class QtGUI(AbstractGUI):
             # self.bottom_field = QFrame
             vbox.addWidget(splitter)
             self.setLayout(vbox)
+            self.widget_top.setMaximumHeight(128 * self.nr_players)
+            self.setMaximumWidth(1300)
 
         def __init__(self, pixmap, parent=None):
             super(QtGUI.ObsField, self).__init__(parent)
@@ -164,13 +174,13 @@ class QtGUI(AbstractGUI):
             self.player_names = [  # fixme: to decouple
                 "lord", "farmer_1", "farmer_2"
             ]
-            self.player_frames: dict[str, QtGUI.CardSetWigdet] = None
+            self.player_frames: dict[str, QtGUI.ObsCardSetWigdet] = None
             self.initUI()
 
-        def update(self, obs: FullGameObs, current_player:str):
+        def update(self, obs: GameObs, current_player: str):
             # update own hand:
             for p in self.player_names:
-                if p== current_player:
+                if p == current_player:
                     self.player_frames[p].set_current(True)
                 else:
                     self.player_frames[p].set_current(False)
@@ -182,8 +192,14 @@ class QtGUI(AbstractGUI):
             for p in obs.hands:
                 if obs.hands[p] is not None:
                     self.player_frames[p].set_cardset(cardset=obs.hands[p].cards)
-
                 self.player_frames[p].update()
+
+    class HistoryField(QFrame):
+        def __init__(self, pixmap, parent=None):
+            super(QtGUI.HistoryField, self).__init__(parent)
+            self.scroll_area = QScrollArea(self)
+            self.history = None
+            pass
 
     class Window(QWidget):
 
@@ -195,11 +211,13 @@ class QtGUI(AbstractGUI):
             mainleft = QtGUI.ObsField(pixmap=self.pixmap, parent=self)
             mainleft.setFrameShape(QFrame.StyledPanel)
             self.obs_field = mainleft
-            mainright = QFrame(self)
+            mainright = QtGUI.HistoryField(self)
             mainright.setFrameShape(QFrame.StyledPanel)
             mainright.setStyleSheet(
                 "background-color:green"
             )
+            self.history_field = mainright
+            # self.history_field =
 
             splitter1 = QSplitter(Qt.Horizontal)
             splitter1.addWidget(mainleft)
@@ -210,18 +228,16 @@ class QtGUI(AbstractGUI):
             splitter2.addWidget(splitter1)
             topbar.setFixedHeight(32)
 
-            # splitter2.setStretchFactor(10,10)
             hbox.addWidget(splitter2)
             self.setLayout(hbox)
 
             self.setGeometry(30, 30, self.w, self.h)
-            # topbar.resize(self.w, 32)
 
         def __init__(self):
             super().__init__()
             self.setWindowTitle("poker")
-            self.w = 1024
-            self.h = 768
+            self.w = 1024 * 2
+            self.h = 768 * 2
             self.resize(self.w, self.h)
             self.card_png_path = {}
             for suit_val in range(4):

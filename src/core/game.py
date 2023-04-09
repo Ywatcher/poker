@@ -35,9 +35,9 @@ class Game(ABC):
     def __init__(self, rule):
         self.rule = rule
         self.player_encoder = rule.get_encoder()
-        self.hands: dict[str, Hand] = {
-            p: None for p in rule.player_list()
-        }
+        # self.hands: dict[str, Hand] = {
+        #     p: None for p in rule.player_list()
+        # }
         # record of game
         self.log = GameRecordsBuffer()
         # discarded cards
@@ -67,9 +67,10 @@ class Game(ABC):
             legal_actions = self.rule.legal_actions(
                 last_action=last_action,
                 player_name=self.info.current_player_name,
-                own_hand=self.player_hands[self.info.current_player_name]
+                own_hand=self.player_hands[self.info.current_player_name],
+                player_state=self.player_states
             )
-            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions)
+            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions, self.player_states)
             self.update_state(action)
             self.update_observations(action)
             self.player_states, self.info.current_player_name, self.info.is_ended = self.rule.judge(
@@ -77,6 +78,9 @@ class Game(ABC):
             )
             self.info.iter = self.info.iter + 1
             last_action = action
+        print("end")
+        # self.update_state(last_action)
+        self.update_observations(last_action)
 
     @classmethod
     def update_observations(cls, action: Action):
@@ -95,9 +99,6 @@ class FullObsGame(Game):
         super(FullObsGame, self).__init__(rule)
 
     def update_observations(self, action: Action):
-        # print("update obs")
-        # print(self.hands)
-        # print(self.player_hands["farmer_2"])
         self.player_observations = {
             player_name: FullGameObs(
                 hands={p: self.player_hands[p] for p in self.player_hands.keys() if p != player_name},

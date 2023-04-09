@@ -56,7 +56,7 @@ class Rule(ABC):
         pass
 
     @classmethod
-    def legal_actions(cls, last_action: Action, own_hand: Hand, player_name: str) -> list[Action]:
+    def legal_actions(cls, last_action: Action, own_hand: Hand, player_name: str, player_state: dict) -> list[Action]:
         pass
 
 
@@ -182,13 +182,16 @@ class NaiveFxxkLandLord(Rule):
             self,
             last_action: Action,
             own_hand: Hand,
-            player_name: str
+            player_name: str,
+            player_state: dict
     ) -> list[Action]:
         own_hand.sort()
         if isinstance(last_action, FoldAction):
             action_fold_upon = last_action.upon
             print("last was fold upon", action_fold_upon)
-            if last_action.player == "start" or action_fold_upon.player == player_name:
+            if last_action.player == "start" or \
+                    action_fold_upon.player == player_name or \
+                    player_state[action_fold_upon.player] != "on_going":
                 # call
                 # cannot fold
                 actions = []
@@ -200,7 +203,8 @@ class NaiveFxxkLandLord(Rule):
                 return self.legal_actions(
                     last_action=action_fold_upon,
                     own_hand=own_hand,
-                    player_name=player_name
+                    player_name=player_name,
+                    player_state=player_state
                 )
         else:
             # follow
@@ -383,5 +387,3 @@ class NaiveFxxkLandLord(Rule):
             if face_values.count(face) == pair_size:
                 return face
         assert False
-
-
