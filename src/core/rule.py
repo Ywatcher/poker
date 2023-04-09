@@ -51,12 +51,16 @@ class Rule(ABC):
         :param hands:
         :param player_state:
         :param current_player:
-        :return:  next state, next player;is end
+        :return:  next game_state, next player;is end
         """
         pass
 
     @classmethod
     def legal_actions(cls, last_action: Action, own_hand: Hand, player_name: str, player_state: dict) -> list[Action]:
+        pass
+
+    @classmethod
+    def get_winner(cls, player_state) -> list[str]:
         pass
 
 
@@ -387,3 +391,9 @@ class NaiveFxxkLandLord(Rule):
             if face_values.count(face) == pair_size:
                 return face
         assert False
+
+    def get_winner(self, player_state) -> list[str]:
+        if player_state["lord"] != "on_going":
+            return ["lord"]
+        else:
+            return ["farmer_1", "farmer_2"]
