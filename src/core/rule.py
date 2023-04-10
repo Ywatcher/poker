@@ -226,7 +226,6 @@ class NaiveFxxkLandLord(Rule):
     # functions below: assume sorted
     @staticmethod
     def search_single(card_set: CardSet, greater_than: Action = None) -> list[CardSet]:
-        # print(type(card_set))
         if greater_than is not None:
             last_action_card = greater_than[0]
             return [

@@ -52,9 +52,6 @@ class Game(ABC):
     def __init__(self, rule):
         self.rule = rule
         self.player_encoder = rule.get_encoder()
-        # self.hands: dict[str, Hand] = {
-        #     p: None for p in rule.player_list()
-        # }
         # record of game
         self.log = GameRecordsBuffer()
         # discarded cards
@@ -73,7 +70,6 @@ class Game(ABC):
         # print("not")
         for observer,player in self.observers:
             observer.update_as_observer(events[player])
-
 
     def set_agent(self, agent: Agent, player_name: str):
         self.player_agents.update({player_name: agent})

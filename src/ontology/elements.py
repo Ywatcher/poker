@@ -22,10 +22,10 @@ class Card:
         return self.value == other.value
 
     def __lt__(self, other):
-        return self.value < other.value
+        return self.face.value < other.face.value
 
     def __le__(self, other):
-        return self.value <= other.value
+        return self.face.value <= other.face.value
 
     def __str__(self):
         return "{}-{}".format(self.suit.name_()[0], self.face.name_())

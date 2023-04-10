@@ -65,12 +65,12 @@ class QtGUI(AbstractGUI):
     def update_as_observer(self, event: Event):
         if event.type == Event.Type.updateHistory:
             record: Action = event.param["record"]
-            self.win.history_field.update_once(record)
+            self.win.history_field.triggered_update(record)
         elif event.type == Event.Type.updateObs:
             # print("update obs")
             obs: GameObs = event.param["obs"]
             current_player:str = event.param["current_player"]
-            self.win.obs_field.update_once(obs=obs, current_player=current_player)
+            self.win.obs_field.triggered_update(obs=obs, current_player=current_player)
             pass
 
     class BackendThread(QObject):
@@ -119,10 +119,15 @@ class QtGUI(AbstractGUI):
         def __init__(self, parent, name, pixmap: dict[str, QPixmap]):
             super(QtGUI.ObsCardSetWigdet, self).__init__(parent)
             self.buffer_len = 24
-            self.w_label = 64
+            self.w_label = 80
             self.card_set = CardSet()
             self.name = name
             self.pixmap = pixmap
+            self.zh = {
+                "lord": "地主",
+                "farmer_1": "农甲",
+                "farmer_2": "农乙"
+            }
             self.hbox = QHBoxLayout(self)
 
             self.name_widget = QWidget(self)
@@ -135,8 +140,11 @@ class QtGUI(AbstractGUI):
             self.name_vb.addWidget(self.dot_label)
             self.name_widget.setLayout(self.name_vb)
             self.hbox.addWidget(self.name_widget)
-            self.name_label.setText(self.name)
-            self.name_label.setFont(QFont('Arial', 9))
+            if self.name in self.zh:
+                self.name_label.setText(self.zh[self.name])
+            else:
+                self.name_label.setText(self.name)
+            self.name_label.setFont(QFont('Arial', 8))
             self.dot_label.setPixmap(self.pixmap["grey-dot"])
             self.name_widget.setFixedWidth(self.w_label)
 
@@ -147,6 +155,7 @@ class QtGUI(AbstractGUI):
                 self.hbox.addWidget(self.card_set_buffer[-1])
             self.setLayout(self.hbox)
             self.is_current = False
+
 
         def update(self) -> None:
             for c in range(self.buffer_len):
@@ -173,9 +182,15 @@ class QtGUI(AbstractGUI):
         def set_label_font(self, font: QFont):
             self.name_label.setFont(font)
 
-        def set_player_name(self, player_name: str):
+        def set_label_style_sheet(self, style_sheet:str):
+            self.name_label.setStyleSheet(style_sheet)
+
+        def set_player_name(self, player_name: str, prefix=""):
             self.name = player_name
-            self.name_label.setText(self.name)
+            if self.name in self.zh:
+                self.name_label.setText(prefix+self.zh[self.name])
+            else:
+                self.name_label.setText(prefix+self.name)
 
     class ObsField(QFrame):
 
@@ -208,7 +223,7 @@ class QtGUI(AbstractGUI):
             self.player_frames: dict[str, QtGUI.ObsCardSetWigdet] = None
             self.initUI()
 
-        def update_once(self, obs: GameObs, current_player: str):
+        def triggered_update(self, obs: GameObs, current_player: str):
             for p in self.player_names:
                 if p == current_player:
                     self.player_frames[p].set_current(True)
@@ -234,7 +249,7 @@ class QtGUI(AbstractGUI):
             self.scroll_widget.setStyleSheet(
                 "background-color:green"
             )
-            self.vbox = QVBoxLayout(self)
+            self.vbox = QVBoxLayout(self.scroll_area)
             self.widgets_buffer = [
                 QtGUI.ObsCardSetWigdet(
                     parent=self,
@@ -247,7 +262,7 @@ class QtGUI(AbstractGUI):
             for widget in self.widgets_buffer:
                 widget.setSizePolicy(vertical_policy)
                 self.vbox.addWidget(widget)
-
+                widget.set_label_style_sheet("color:white")
             self.scroll_widget.setLayout(self.vbox)
             self.scroll_area.setWidget(self.scroll_widget)
             self.setCentralWidget(self.scroll_area)
@@ -262,11 +277,11 @@ class QtGUI(AbstractGUI):
 
             self.initUI()
 
-        def update_once(self, record: Action):
-            self.widgets_buffer[self.buffer_top].set_player_name("{}:{}".format(self.buffer_top, record.player))
+        def triggered_update(self, record: Action):
+            self.widgets_buffer[self.buffer_top].set_player_name(
+                player_name=record.player,prefix="{}:".format(self.buffer_top)
+            )
             self.widgets_buffer[self.buffer_top].set_cardset(record.copy()) # v
-            # self.vbox.add
-            # self.vbox.addWidget(self.widgets_buffer[self.buffer_top])  # <-
             self.widgets_buffer[self.buffer_top].update()  # v
             self.buffer_top += 1
             self.update()
@@ -322,7 +337,7 @@ class QtGUI(AbstractGUI):
             self.initUI()
 
         def handleDisplayDuringGame(self, obs: GameObs, info: GameInfo):
-            # self.obs_field.update_once(obs, info.current_player_name)
+            # self.obs_field.triggered_update(obs, info.current_player_name)
             pass
 
         def handleDisplayBeforeGame(self):
