@@ -19,9 +19,12 @@ def main():
     game_manager.setGUI(gui, "lord")
     # for name in ["lord", "farmer_1", "farmer_2"]:
     #     game_manager.setAgent(NaiveAgent(), name)
-    for name in ["farmer_1", "farmer_2"]:
-        game_manager.setAgent(NaiveAgent(), name)
-    game_manager.setAgent(MiniMaxAgent(player_name="lord"),"lord")
+    # for name in ["farmer_1", "farmer_2"]:
+    #     game_manager.setAgent(NaiveAgent(), name)
+    # game_manager.setAgent(MiniMaxAgent(player_name="lord",depth=10),"lord")
+    for name in  ["farmer_1","farmer_2"]:
+        game_manager.setAgent(MiniMaxAgent(name,depth=10),name)
+    game_manager.setAgent(NaiveAgent(),"lord")
     thread = threading.Thread(target=game.run)
     thread.start()
     # print(game.info)

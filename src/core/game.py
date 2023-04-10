@@ -11,10 +11,22 @@ class GameRecordsBuffer:
     def __init__(self):
         self.rounds = 0
         self.buffer: list[Action] = []
+        self.observers = []
 
     def add_record(self, record: Action):
         self.rounds += 1
         self.buffer.append(record)
+        self.notify(record)
+
+    def add_observer(self, observer):
+        self.observers.append(observer)
+
+    def remove_observer(self, observer):
+        self.observers.remove(observer)
+
+    def notify(self, *args):
+        for observer in self.observers:
+            observer.update_as_observer(*args)
 
 
 class GameInfo:
@@ -70,7 +82,8 @@ class Game(ABC):
                 own_hand=self.player_hands[self.info.current_player_name],
                 player_state=self.player_states
             )
-            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions, self.player_states.copy())
+            action = self.player_agents[self.info.current_player_name].action(obs, legal_actions,
+                                                                              self.player_states.copy())
             self.update_state(action)
             self.update_observations(action)
             self.player_states, self.info.current_player_name, self.info.is_ended = self.rule.judge(
@@ -113,7 +126,7 @@ class FullObsGame(Game):
         current_player = action.player
         self.player_hands[current_player].remove(cards=action.cards)
         self.log.add_record(record=action)
-        print(action,action.tag)
+        print(action, action.tag)
         print(self.player_hands)
 
 

@@ -1,24 +1,31 @@
 # -*- coding: utf-8 -*-
 import sys
 import time
+# from builtins import function
 from typing import Union
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
+from PyQt5.QtGui import QPixmap, QFont
+from PyQt5.QtWidgets import (
+    QWidget, QApplication, QSizePolicy, QLabel,
+    QFrame, QVBoxLayout, QHBoxLayout, QSplitter,
+    QScrollArea, QMainWindow
+)
 
 from user_interface.AbstractGUI import AbstractGUI
 from core.observation import GameObs, FullGameObs
-from core.game import GameInfo
+from core.game import GameInfo, GameRecordsBuffer
 from user_interface.graphic_util import card2path
 from ontology.cards import CardSuit, CardFace
-from ontology.elements import Card, CardSet
+from ontology.elements import Card, CardSet, Action
 from util.repository import root_resource
+
+# todo: garbage collect
 
 
 class QtGUI(AbstractGUI):
     def __init__(self):
-        super(QtGUI, self).__init__()
+        super(QtGUI, self).__init__(is_observer=True)
         self.app = QApplication(sys.argv)
         self.win = self.Window()
         self.backendthread = QThread()
@@ -28,19 +35,34 @@ class QtGUI(AbstractGUI):
         self.backendthread.started.connect(self.backend.run)
 
     def mainloop(self):
+        self.win.history_field.history = self.backend.get_history()
         self.backendthread.start()
         self.win.show()
-        # print("here")
         sys.exit(self.app.exec_())
 
     def set_func_get_observation(self, f):
+        """
+        :param f: function, this function is used for getting game obs generally, \
+        regardless of whether self behaves like an observer
+        """
         self.backend.get_observation = f
 
     def set_func_get_history(self, f):
+        """
+        :param f: function, this function is used for getting game history generally, \
+        regardless of whether self behaves like an observer
+        """
         self.backend.get_history = f
 
     def set_func_get_game_info(self, f):
+        """
+        :param f: function, this function is used for getting game info generally, \
+        regardless of whether self behaves like an observer
+        """
         self.backend.get_game_info = f
+
+    def update_as_observer(self, record: Action):
+        self.win.history_field.update_once(record)
 
     class BackendThread(QObject):
 
@@ -72,7 +94,7 @@ class QtGUI(AbstractGUI):
         def get_game_info(self) -> GameInfo:
             pass
 
-        def get_history(self):
+        def get_history(self) -> GameRecordsBuffer:
             pass
 
     class CardSetWidget(QWidget):
@@ -97,7 +119,8 @@ class QtGUI(AbstractGUI):
             self.hbox = QHBoxLayout(self)
 
             self.name_widget = QWidget(self)
-            self.name_vb = QVBoxLayout(self)
+            # QWidget.setSizePolicy()
+            self.name_vb = QVBoxLayout(self.name_widget)
 
             # name and dot
             self.name_label = QLabel(self)
@@ -144,6 +167,10 @@ class QtGUI(AbstractGUI):
 
         def set_label_font(self, font: QFont):
             self.name_label.setFont(font)
+
+        def set_player_name(self, player_name: str):
+            self.name = player_name
+            self.name_label.setText(self.name)
 
     class ObsField(QFrame):
 
@@ -194,12 +221,56 @@ class QtGUI(AbstractGUI):
                     self.player_frames[p].set_cardset(cardset=obs.hands[p].cards)
                 self.player_frames[p].update()
 
-    class HistoryField(QFrame):
+    class HistoryField(QMainWindow):
+
+        def initUI(self):
+            self.vbox = QVBoxLayout(self)
+            # self.setLayout(self.vbox)
+            self.scroll_widget.setLayout(self.vbox)
+            self.scroll_area.setWidget(self.scroll_widget)
+            self.setCentralWidget(self.scroll_area)
+            # self.scroll_area.sev
+
         def __init__(self, pixmap, parent=None):
+            # super(QtGUI.HistoryField, self).__init__(parent)
+            # QFrame.__init__(parent)
+            # QMainWindow.__init__(parent)
             super(QtGUI.HistoryField, self).__init__(parent)
             self.scroll_area = QScrollArea(self)
-            self.history = None
-            pass
+            self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.scroll_area.setWidgetResizable(True)
+
+            self.scroll_widget = QWidget()
+
+            # self.scroll_area.resize(self.width(),self.height())
+            # todo to smoothen scroll area
+            self.pixmap = pixmap
+            self.history: GameRecordsBuffer = None  # initialized at the start of mainloop
+            self.buffer_size = 128
+            self.widgets_buffer = [
+                QtGUI.ObsCardSetWigdet(
+                    parent=self,
+                    pixmap=self.pixmap,
+                    name=""
+                ) for i in range(self.buffer_size)
+            ]
+            vertical_policy = QSizePolicy()
+            vertical_policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
+            for widget in self.widgets_buffer:
+                # widget.setVerticalPolicy(QSizePolicy.Policy.Fixed)
+                widget.setSizePolicy(vertical_policy)
+            self.buffer_top = 0
+
+            self.initUI()
+
+        def update_once(self, record: Action):
+            self.widgets_buffer[self.buffer_top].set_player_name("{}:{}".format(self.buffer_top,record.player))
+            self.widgets_buffer[self.buffer_top].set_cardset(record)
+            self.vbox.addWidget(self.widgets_buffer[self.buffer_top])
+            self.widgets_buffer[self.buffer_top].update()
+            self.buffer_top += 1
+            self.update()
 
     class Window(QWidget):
 
@@ -211,13 +282,12 @@ class QtGUI(AbstractGUI):
             mainleft = QtGUI.ObsField(pixmap=self.pixmap, parent=self)
             mainleft.setFrameShape(QFrame.StyledPanel)
             self.obs_field = mainleft
-            mainright = QtGUI.HistoryField(self)
-            mainright.setFrameShape(QFrame.StyledPanel)
+            mainright = QtGUI.HistoryField(pixmap=self.pixmap, parent=self)
+            # mainright.setFrameShape(QFrame.StyledPanel)
             mainright.setStyleSheet(
                 "background-color:green"
             )
             self.history_field = mainright
-            # self.history_field =
 
             splitter1 = QSplitter(Qt.Horizontal)
             splitter1.addWidget(mainleft)

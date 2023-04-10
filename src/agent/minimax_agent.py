@@ -15,18 +15,18 @@ class MiniMaxAgent(Agent):
     # the size of own hand
     # todo : costdif
 
-    def __init__(self, player_name: str):
+    def __init__(self, player_name: str, depth:int=10):
         super().__init__(name="minimax", is_human=False)
         self.player_name = player_name
         self.rule = NaiveFxxkLandLord()
         # 1 for max, -1 for min
 
-        self.search_depth = 10
-        self.ret_depth = 2
+        self.search_depth = depth
+        # self.ret_depth = 2
         self.search_problem = MiniMaxAgent.MiniMaxSearchProblem(
             max_depth=self.search_depth,
             player=self.player_name,
-            ret_depth=self.ret_depth,
+            # ret_depth=self.ret_depth,
             rule=self.rule
         )
 
@@ -178,12 +178,12 @@ class MiniMaxAgent(Agent):
         def __init__(
                 self,
                 max_depth: int,
-                ret_depth: int,
+                # ret_depth: int,
                 player: str,
                 rule: Rule
         ):
             self.max_depth = max_depth
-            self.ret_depth = min(ret_depth, max_depth)
+            # self.ret_depth = min(ret_depth, max_depth)
             self.rule = rule
             self.player = player
             if self.player == "lord":

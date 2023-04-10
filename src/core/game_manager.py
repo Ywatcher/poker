@@ -20,6 +20,8 @@ class GameManager:
         GUI.set_func_get_observation(f=lambda: self.game.get_observation(player_name))
         GUI.set_func_get_history(f=lambda: self.game.log)
         GUI.set_func_get_game_info(f=lambda: self.game.info)
+        if GUI.as_observer():
+            self.game.log.add_observer(GUI)
 
     def setAgent(self, agent: Agent, player_name):
         self.game.set_agent(agent=agent, player_name=player_name)
