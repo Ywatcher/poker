@@ -23,6 +23,7 @@ class GameManager:
         if GUI.as_observer():
             self.game.log.add_observer(GUI)
             self.game.add_game_obs_observer(GUI, player_name)
+            # pass
 
     def setAgent(self, agent: Agent, player_name):
         self.game.set_agent(agent=agent, player_name=player_name)

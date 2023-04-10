@@ -64,7 +64,7 @@ class Game(ABC):
         self.info = GameInfo(is_started=False, is_ended=False)
         self.player_agents: dict[str, Agent] = {}
         self.observers = []
-        # self.table_cards = set()
+        self.sleep_time=0
 
     def add_game_obs_observer(self, observer, player_name):
         self.observers.append((observer,player_name))
@@ -88,7 +88,7 @@ class Game(ABC):
         last_action = FoldAction("start")
         self.update_observations(action=last_action)
         self.info.is_started = True
-        time.sleep(10)
+        time.sleep(self.sleep_time)
         while not self.info.is_ended:
             obs = self.get_observation(player_name=self.info.current_player_name)
             # play

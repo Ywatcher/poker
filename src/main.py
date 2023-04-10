@@ -13,6 +13,7 @@ from agent.greedy_agent import GreedyAgent
 def main():
     rule = NaiveFxxkLandLord()
     game = FullObsGame(rule)
+    game.sleep_time = 2
     game_manager = GameManager()
     gui_factory = GUIFactory()
     gui = gui_factory.getGUIObject(UI_types.PyQt)
@@ -23,13 +24,12 @@ def main():
     # for name in ["farmer_1", "farmer_2"]:
     #     game_manager.setAgent(NaiveAgent(), name)
     # game_manager.setAgent(MiniMaxAgent(player_name="lord",depth=10),"lord")
-    for name in  ["farmer_1","farmer_2"]:
-        game_manager.setAgent(MiniMaxAgent(name,depth=10),name)
+    for name in ["farmer_1", "farmer_2"]:
+        game_manager.setAgent(MiniMaxAgent(name, depth=10), name)
     # game_manager.setAgent(NaiveAgent(),"lord")
-    game_manager.setAgent(GreedyAgent(),"lord")
+    game_manager.setAgent(GreedyAgent(), "lord")
     thread = threading.Thread(target=game.run)
     thread.start()
-    # print(game.info)
     gui.mainloop()
 
 

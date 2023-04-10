@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
 import time
-# from builtins import function
 from typing import Union
 
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -69,9 +68,9 @@ class QtGUI(AbstractGUI):
             self.win.history_field.update_once(record)
         elif event.type == Event.Type.updateObs:
             # print("update obs")
-            # obs: GameObs = event.param["obs"]
-            # current_player:str = event.param["current_player"]
-            # self.win.obs_field.update_once(obs=obs, current_player=current_player)
+            obs: GameObs = event.param["obs"]
+            current_player:str = event.param["current_player"]
+            self.win.obs_field.update_once(obs=obs, current_player=current_player)
             pass
 
     class BackendThread(QObject):
@@ -82,21 +81,23 @@ class QtGUI(AbstractGUI):
             super(QtGUI.BackendThread, self).__init__()
 
         def run(self):
-            while True:
-                for i in range(1, 11):
-                    # print("here")
-                    game_info = self.get_game_info()
-                    # print(game_info)
-                    if not game_info.is_started:
-                        # print("not yet")
-                        pass
-                    elif not game_info.is_ended:
-                        # print("started")
-                        pass
-                        self.update_.emit(self.get_observation(), game_info)
-                        time.sleep(0.1)
-                    else:
-                        pass
+            # while True:
+            #     # for i in range(1, 11):
+            #         # print("here")
+            #     game_info = self.get_game_info()
+            #     # print(game_info)
+            #     if not game_info.is_started:
+            #         # print("not yet")
+            #         pass
+            #     elif not game_info.is_ended:
+            #         # print("started")
+            #         pass
+            #         self.update_.emit(self.get_observation(), game_info)
+            #
+            #     else:
+            #         pass
+            #     time.sleep(0.01)
+            pass
 
         def get_observation(self) -> GameObs:
             pass
@@ -233,6 +234,7 @@ class QtGUI(AbstractGUI):
             self.scroll_widget.setStyleSheet(
                 "background-color:green"
             )
+            self.vbox = QVBoxLayout(self)
             self.widgets_buffer = [
                 QtGUI.ObsCardSetWigdet(
                     parent=self,
@@ -244,7 +246,8 @@ class QtGUI(AbstractGUI):
             vertical_policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
             for widget in self.widgets_buffer:
                 widget.setSizePolicy(vertical_policy)
-            self.vbox = QVBoxLayout(self)
+                self.vbox.addWidget(widget)
+
             self.scroll_widget.setLayout(self.vbox)
             self.scroll_area.setWidget(self.scroll_widget)
             self.setCentralWidget(self.scroll_area)
@@ -261,9 +264,10 @@ class QtGUI(AbstractGUI):
 
         def update_once(self, record: Action):
             self.widgets_buffer[self.buffer_top].set_player_name("{}:{}".format(self.buffer_top, record.player))
-            self.widgets_buffer[self.buffer_top].set_cardset(record)
-            self.vbox.addWidget(self.widgets_buffer[self.buffer_top])
-            self.widgets_buffer[self.buffer_top].update()
+            self.widgets_buffer[self.buffer_top].set_cardset(record.copy()) # v
+            # self.vbox.add
+            # self.vbox.addWidget(self.widgets_buffer[self.buffer_top])  # <-
+            self.widgets_buffer[self.buffer_top].update()  # v
             self.buffer_top += 1
             self.update()
 
@@ -318,8 +322,8 @@ class QtGUI(AbstractGUI):
             self.initUI()
 
         def handleDisplayDuringGame(self, obs: GameObs, info: GameInfo):
-            self.obs_field.update_once(obs, info.current_player_name)
-            # pass
+            # self.obs_field.update_once(obs, info.current_player_name)
+            pass
 
         def handleDisplayBeforeGame(self):
             pass

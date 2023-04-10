@@ -32,7 +32,6 @@ class AbstractGUI(ABC):
     def observe_observation(self, obs):  # todo
         obs.add_observer(self)
 
-    # @classmethod
     def as_observer(self) -> bool:
         """
         :return: whether self behaves as an observer; if the return value is true, \

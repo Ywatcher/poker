@@ -96,6 +96,13 @@ class Action(CardSet):
     def __repr__(self):
         return "Action("+self.__str__()+")"
 
+    def copy(self) -> "Action":
+        return Action(
+            player=self.player,
+            cards=self.cards.copy(),
+            tag=self.tag
+        )
+
 
 class FoldAction(Action):
     # when starting game
