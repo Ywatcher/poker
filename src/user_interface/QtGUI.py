@@ -18,7 +18,9 @@ from core.game import GameInfo, GameRecordsBuffer
 from user_interface.graphic_util import card2path
 from ontology.cards import CardSuit, CardFace
 from ontology.elements import Card, CardSet, Action
+from util.observer import Event
 from util.repository import root_resource
+
 
 # todo: garbage collect
 
@@ -61,8 +63,16 @@ class QtGUI(AbstractGUI):
         """
         self.backend.get_game_info = f
 
-    def update_as_observer(self, record: Action):
-        self.win.history_field.update_once(record)
+    def update_as_observer(self, event: Event):
+        if event.type == Event.Type.updateHistory:
+            record: Action = event.param["record"]
+            self.win.history_field.update_once(record)
+        elif event.type == Event.Type.updateObs:
+            # print("update obs")
+            # obs: GameObs = event.param["obs"]
+            # current_player:str = event.param["current_player"]
+            # self.win.obs_field.update_once(obs=obs, current_player=current_player)
+            pass
 
     class BackendThread(QObject):
 
@@ -108,18 +118,13 @@ class QtGUI(AbstractGUI):
         def __init__(self, parent, name, pixmap: dict[str, QPixmap]):
             super(QtGUI.ObsCardSetWigdet, self).__init__(parent)
             self.buffer_len = 24
-            # self.h_ = 128
             self.w_label = 64
-            # self.w_ = 68*self.buffer_len + self.w_label
-            # self.setFixedHeight(self.h_)
-            # self.setFixedWidth(self.w_)
             self.card_set = CardSet()
             self.name = name
             self.pixmap = pixmap
             self.hbox = QHBoxLayout(self)
 
             self.name_widget = QWidget(self)
-            # QWidget.setSizePolicy()
             self.name_vb = QVBoxLayout(self.name_widget)
 
             # name and dot
@@ -134,7 +139,6 @@ class QtGUI(AbstractGUI):
             self.dot_label.setPixmap(self.pixmap["grey-dot"])
             self.name_widget.setFixedWidth(self.w_label)
 
-            # self.name_label.setFixedWidth(64)
             self.card_set_buffer = []
 
             for id_pos in range(self.buffer_len):
@@ -188,7 +192,6 @@ class QtGUI(AbstractGUI):
                 vbox_top.addWidget(self.player_frames[p])
             splitter.addWidget(self.widget_top)
             splitter.addWidget(self.widget_bot)
-            # self.bottom_field = QFrame
             vbox.addWidget(splitter)
             self.setLayout(vbox)
             self.widget_top.setMaximumHeight(128 * self.nr_players)
@@ -204,17 +207,15 @@ class QtGUI(AbstractGUI):
             self.player_frames: dict[str, QtGUI.ObsCardSetWigdet] = None
             self.initUI()
 
-        def update(self, obs: GameObs, current_player: str):
-            # update own hand:
+        def update_once(self, obs: GameObs, current_player: str):
             for p in self.player_names:
                 if p == current_player:
                     self.player_frames[p].set_current(True)
                 else:
                     self.player_frames[p].set_current(False)
-            for p in obs.your_own_hand:  # todo : add marker for current action
+            for p in obs.your_own_hand:
                 if obs.your_own_hand[p] is not None:
                     self.player_frames[p].set_cardset(cardset=obs.your_own_hand[p].cards)
-
                 self.player_frames[p].update()
             for p in obs.hands:
                 if obs.hands[p] is not None:
@@ -224,30 +225,14 @@ class QtGUI(AbstractGUI):
     class HistoryField(QMainWindow):
 
         def initUI(self):
-            self.vbox = QVBoxLayout(self)
-            # self.setLayout(self.vbox)
-            self.scroll_widget.setLayout(self.vbox)
-            self.scroll_area.setWidget(self.scroll_widget)
-            self.setCentralWidget(self.scroll_area)
-            # self.scroll_area.sev
-
-        def __init__(self, pixmap, parent=None):
-            # super(QtGUI.HistoryField, self).__init__(parent)
-            # QFrame.__init__(parent)
-            # QMainWindow.__init__(parent)
-            super(QtGUI.HistoryField, self).__init__(parent)
             self.scroll_area = QScrollArea(self)
             self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
             self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.scroll_area.setWidgetResizable(True)
-
             self.scroll_widget = QWidget()
-
-            # self.scroll_area.resize(self.width(),self.height())
-            # todo to smoothen scroll area
-            self.pixmap = pixmap
-            self.history: GameRecordsBuffer = None  # initialized at the start of mainloop
-            self.buffer_size = 128
+            self.scroll_widget.setStyleSheet(
+                "background-color:green"
+            )
             self.widgets_buffer = [
                 QtGUI.ObsCardSetWigdet(
                     parent=self,
@@ -258,14 +243,24 @@ class QtGUI(AbstractGUI):
             vertical_policy = QSizePolicy()
             vertical_policy.setVerticalPolicy(QSizePolicy.Policy.Fixed)
             for widget in self.widgets_buffer:
-                # widget.setVerticalPolicy(QSizePolicy.Policy.Fixed)
                 widget.setSizePolicy(vertical_policy)
+            self.vbox = QVBoxLayout(self)
+            self.scroll_widget.setLayout(self.vbox)
+            self.scroll_area.setWidget(self.scroll_widget)
+            self.setCentralWidget(self.scroll_area)
+
+        def __init__(self, pixmap, parent=None):
+            super(QtGUI.HistoryField, self).__init__(parent)
+            self.pixmap = pixmap
+            self.history: GameRecordsBuffer = None  # initialized at the start of mainloop
+            self.buffer_size = 128
+
             self.buffer_top = 0
 
             self.initUI()
 
         def update_once(self, record: Action):
-            self.widgets_buffer[self.buffer_top].set_player_name("{}:{}".format(self.buffer_top,record.player))
+            self.widgets_buffer[self.buffer_top].set_player_name("{}:{}".format(self.buffer_top, record.player))
             self.widgets_buffer[self.buffer_top].set_cardset(record)
             self.vbox.addWidget(self.widgets_buffer[self.buffer_top])
             self.widgets_buffer[self.buffer_top].update()
@@ -283,10 +278,6 @@ class QtGUI(AbstractGUI):
             mainleft.setFrameShape(QFrame.StyledPanel)
             self.obs_field = mainleft
             mainright = QtGUI.HistoryField(pixmap=self.pixmap, parent=self)
-            # mainright.setFrameShape(QFrame.StyledPanel)
-            mainright.setStyleSheet(
-                "background-color:green"
-            )
             self.history_field = mainright
 
             splitter1 = QSplitter(Qt.Horizontal)
@@ -327,7 +318,8 @@ class QtGUI(AbstractGUI):
             self.initUI()
 
         def handleDisplayDuringGame(self, obs: GameObs, info: GameInfo):
-            self.obs_field.update(obs, info.current_player_name)
+            self.obs_field.update_once(obs, info.current_player_name)
+            # pass
 
         def handleDisplayBeforeGame(self):
             pass

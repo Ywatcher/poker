@@ -22,6 +22,7 @@ class GameManager:
         GUI.set_func_get_game_info(f=lambda: self.game.info)
         if GUI.as_observer():
             self.game.log.add_observer(GUI)
+            self.game.add_game_obs_observer(GUI, player_name)
 
     def setAgent(self, agent: Agent, player_name):
         self.game.set_agent(agent=agent, player_name=player_name)

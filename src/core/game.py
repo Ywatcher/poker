@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+import time
 from abc import ABC
 
 from agent.abstract_agent import Agent
 from ontology.elements import Hand, Action, FoldAction
 from core.rule import Rule
 from core.observation import GameObs, FullGameObs
+from util.observer import Event
 
 
 class GameRecordsBuffer:
@@ -16,7 +18,10 @@ class GameRecordsBuffer:
     def add_record(self, record: Action):
         self.rounds += 1
         self.buffer.append(record)
-        self.notify(record)
+        self.notify(Event(
+            event_type=Event.Type.updateHistory,
+            record=record
+        ))
 
     def add_observer(self, observer):
         self.observers.append(observer)
@@ -24,9 +29,9 @@ class GameRecordsBuffer:
     def remove_observer(self, observer):
         self.observers.remove(observer)
 
-    def notify(self, *args):
+    def notify(self, event:Event):
         for observer in self.observers:
-            observer.update_as_observer(*args)
+            observer.update_as_observer(event)
 
 
 class GameInfo:
@@ -58,7 +63,17 @@ class Game(ABC):
         self.player_observations = {}
         self.info = GameInfo(is_started=False, is_ended=False)
         self.player_agents: dict[str, Agent] = {}
+        self.observers = []
         # self.table_cards = set()
+
+    def add_game_obs_observer(self, observer, player_name):
+        self.observers.append((observer,player_name))
+
+    def notify(self, events:dict[str,Event]):
+        # print("not")
+        for observer,player in self.observers:
+            observer.update_as_observer(events[player])
+
 
     def set_agent(self, agent: Agent, player_name: str):
         self.player_agents.update({player_name: agent})
@@ -73,6 +88,7 @@ class Game(ABC):
         last_action = FoldAction("start")
         self.update_observations(action=last_action)
         self.info.is_started = True
+        time.sleep(10)
         while not self.info.is_ended:
             obs = self.get_observation(player_name=self.info.current_player_name)
             # play
@@ -121,6 +137,13 @@ class FullObsGame(Game):
                 encoder=self.player_encoder
             ) for player_name in self.player_states.keys()
         }
+        self.notify(events=
+            {p:Event(
+                event_type=Event.Type.updateObs,
+                obs=self.player_observations[p],
+                current_player=action.player
+            ) for p in self.player_observations}
+        )
 
     def update_state(self, action: Action):
         current_player = action.player

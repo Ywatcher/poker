@@ -17,4 +17,9 @@ class GreedyAgent(Agent):
             legal_actions: list[Action],
             player_state: dict
     ) -> Action:
-        pass
+        action_lengths = set(
+            len(action) for action in legal_actions
+        )
+        max_length = max(action_lengths)
+        return [action for action in legal_actions if len(action)==max_length][0]
+
