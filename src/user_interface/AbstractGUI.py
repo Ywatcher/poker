@@ -29,7 +29,7 @@ class AbstractGUI(ABC):
     def observe_history(self, history_buffer):
         history_buffer.add_observer(self)
 
-    def observe_observation(self, obs):  # todo
+    def observe_observation(self, obs):
         obs.add_observer(self)
 
     def as_observer(self) -> bool:
@@ -37,6 +37,5 @@ class AbstractGUI(ABC):
         :return: whether self behaves as an observer; if the return value is true, \
         then the game manager will set self as an observer to game obs, history and \
         info during initialization
-        todo: now it only deals with game history, need to handle obs and info in the future
         """
         return self.is_observer

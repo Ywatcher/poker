@@ -86,14 +86,19 @@ class NaiveFxxkLandLord(Rule):
         def encode(self, player_name: str) -> torch.Tensor:
             return self.dict[player_name]
 
-    def __init__(self, seed: int = 0):
+    def __init__(self, seed: int = 0, has_wild_cards=False):
         self.seed = seed
         # without joker
         self.cards = [
             Card(suit=CardSuit(j), face=CardFace(i))
             for i in range(13) for j in range(4)
         ]
-        self.nr_cards = 52
+        if has_wild_cards:
+            self.cards.append(Card(suit=None,face=CardFace.joker,is_wild_card=True))
+            self.cards.append(Card(suit=None,face=CardFace.Joker,is_wild_card=True))
+            self.nr_cards = 54
+        else:
+            self.nr_cards = 52
         # 3 player_hands
         # landlord: the agent (forced assignment)
         self.players = ["lord", "farmer_1", "farmer_2"]

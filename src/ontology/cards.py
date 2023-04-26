@@ -17,6 +17,9 @@ class CardFace(Enum):
     K = 10
     A = 11
     _2 = 12
+    # ---
+    joker = 13
+    Joker = 14
 
     def name_(self) -> str:
         return self.name.strip('_')

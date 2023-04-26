@@ -14,14 +14,11 @@ from PyQt5.QtWidgets import (
 from user_interface.AbstractGUI import AbstractGUI
 from core.observation import GameObs, FullGameObs
 from core.game import GameInfo, GameRecordsBuffer
-from user_interface.graphic_util import card2path
+from user_interface.graphic_util import card2path, str2path
 from ontology.cards import CardSuit, CardFace
 from ontology.elements import Card, CardSet, Action
 from util.observer import Event
 from util.repository import root_resource
-
-
-# todo: garbage collect
 
 
 class QtGUI(AbstractGUI):
@@ -69,7 +66,7 @@ class QtGUI(AbstractGUI):
         elif event.type == Event.Type.updateObs:
             # print("update obs")
             obs: GameObs = event.param["obs"]
-            current_player:str = event.param["current_player"]
+            current_player: str = event.param["current_player"]
             self.win.obs_field.triggered_update(obs=obs, current_player=current_player)
             pass
 
@@ -156,7 +153,6 @@ class QtGUI(AbstractGUI):
             self.setLayout(self.hbox)
             self.is_current = False
 
-
         def update(self) -> None:
             for c in range(self.buffer_len):
                 if c < len(self.card_set):
@@ -182,15 +178,15 @@ class QtGUI(AbstractGUI):
         def set_label_font(self, font: QFont):
             self.name_label.setFont(font)
 
-        def set_label_style_sheet(self, style_sheet:str):
+        def set_label_style_sheet(self, style_sheet: str):
             self.name_label.setStyleSheet(style_sheet)
 
         def set_player_name(self, player_name: str, prefix=""):
             self.name = player_name
             if self.name in self.zh:
-                self.name_label.setText(prefix+self.zh[self.name])
+                self.name_label.setText(prefix + self.zh[self.name])
             else:
-                self.name_label.setText(prefix+self.name)
+                self.name_label.setText(prefix + self.name)
 
     class ObsField(QFrame):
 
@@ -279,14 +275,15 @@ class QtGUI(AbstractGUI):
 
         def triggered_update(self, record: Action):
             self.widgets_buffer[self.buffer_top].set_player_name(
-                player_name=record.player,prefix="{}:".format(self.buffer_top)
+                player_name=record.player, prefix="{}:".format(self.buffer_top)
             )
-            self.widgets_buffer[self.buffer_top].set_cardset(record.copy()) # v
+            self.widgets_buffer[self.buffer_top].set_cardset(record.copy())  # v
             self.widgets_buffer[self.buffer_top].update()  # v
             self.buffer_top += 1
             self.update()
 
     class Window(QWidget):
+        # todo: use QMainWindow to implement
 
         def initUI(self):
             hbox = QHBoxLayout(self)
@@ -324,6 +321,7 @@ class QtGUI(AbstractGUI):
                 for face_val in range(13):
                     card = Card(suit=CardSuit(suit_val), face=CardFace(face_val))
                     self.card_png_path.update({str(card): card2path(card)})
+            self.card_png_path.update({"joker": str2path("joker"), "Joker": str2path("Joker")})
             self.card_pixmap = {
                 key: QPixmap(self.card_png_path[key]) for key in self.card_png_path.keys()
             }

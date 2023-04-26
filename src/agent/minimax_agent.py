@@ -14,7 +14,7 @@ class MiniMaxAgent(Agent):
     # the size of opponent's legal actions(without fold) -
     # the size of own hand
 
-    def __init__(self, player_name: str, depth:int=10):
+    def __init__(self, player_name: str, depth: int = 10):
         super().__init__(name="minimax", is_human=False)
         self.player_name = player_name
         self.rule = NaiveFxxkLandLord()
@@ -71,7 +71,7 @@ class MiniMaxAgent(Agent):
 
         def __repr__(self):
             return "GameSearchState(\nplayer: {}, player state: {}, \nplayer hand: {},\nlast_action: {}, is_end: {}\n)".format(
-                self.player,self.player_state,self.player_hands,self.last_action,self.is_end
+                self.player, self.player_state, self.player_hands, self.last_action, self.is_end
             )
 
     class MinimaxNode:

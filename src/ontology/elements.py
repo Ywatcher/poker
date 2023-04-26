@@ -5,15 +5,26 @@ from ontology.cards import CardSuit, CardFace
 
 
 class Card:
-    def __init__(self, suit: CardSuit, face: CardFace):
+
+    joker_val = 52
+    Joker_val = 53
+
+    def __init__(self, suit: CardSuit, face: CardFace, is_wild_card=False):
         self.suit = suit
         self.face = face
-        self.value = self.face.value * 4 + self.suit.value
+        if not is_wild_card:
+            self.value = self.face.value * 4 + self.suit.value
+        else:
+            if face == CardFace.Joker:
+                self.value = self.Joker_val
+            elif face == CardFace.joker:
+                self.value = self.joker_val
+        self.is_wild_card = is_wild_card
         # self.location = location
 
     def encode(self) -> torch.Tensor:
         tensor = torch.tensor([self.value], dtype=torch.int64)
-        return F.one_hot(tensor, num_classes=52)
+        return F.one_hot(tensor, num_classes=54)
 
     def __hash__(self):
         return self.value
@@ -28,10 +39,20 @@ class Card:
         return self.face.value <= other.face.value
 
     def __str__(self):
-        return "{}-{}".format(self.suit.name_()[0], self.face.name_())
+        if not self.is_wild_card:
+            return "{}-{}".format(self.suit.name_()[0], self.face.name_())
+        else:
+            return "{}".format(self.face.name_())
 
     def __repr__(self):
-        return "{}-{}".format(self.suit.name_(), self.face.name_())
+        if not self.is_wild_card:
+            return "{}-{}".format(self.suit.name_(), self.face.name_())
+        else:
+            return "{}".format(self.face.name_())
+
+
+
+
 
 class CardSet:
     def __init__(self, cards=None):
